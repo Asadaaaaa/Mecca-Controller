@@ -1,0 +1,27 @@
+name: Mecca Controller | CD | Staging
+
+on:
+  push:
+    branches: [ "staging" ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: executing remote ssh commands using key
+        uses: appleboy/ssh-action@v0.1.8
+        with:
+          host: ${{ secrets.HOST }}
+          username: ${{ secrets.USERNAME }}
+          key: ${{ secrets.KEY }}
+          port: ${{ secrets.PORT }}
+          script: |
+            export NVM_DIR=~/.nvm
+            source ~/.nvm/nvm.sh
+            cd /root/app/mecca/Mecca-Controller
+            git reset --hard HEAD
+            git pull
+            git switch staging
+            git pull origin staging
+            npm i
+            pm2 restart mecca-controller-stg || pm2 start src/Main.js --name mecca-controller-stg
