@@ -1,4 +1,4 @@
-import { AuthRoute, CustomerRoute } from '#routesPrimaryV1';
+import { AuthRoute, CustomerRoute, WarehouseRoute, RoleRoute, UserRoute } from '#routesPrimaryV1';
 
 class PrimaryHandlerV1 {
   constructor(server) {
@@ -6,6 +6,9 @@ class PrimaryHandlerV1 {
 
     new AuthRoute(server, endpointPrefix);
     new CustomerRoute(server, endpointPrefix);
+    new WarehouseRoute(server, endpointPrefix);
+    new RoleRoute(server, endpointPrefix);
+    new UserRoute(server, endpointPrefix);
   }
 }
 

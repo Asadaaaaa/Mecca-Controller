@@ -6,6 +6,7 @@ import PermissionsModel from "./Permissions.model.js";
 import UserRolesModel from "./UserRoles.model.js";
 import RolePermissionsModel from "./RolePermissions.model.js";
 import CustomersModel from "./Customers.model.js";
+import WarehousesModel from "./Warehouses.model.js";
 
 class Handler {
     constructor(server) {
@@ -41,6 +42,7 @@ class Handler {
         this.userRoles = new UserRolesModel(this.server, this.db);
         this.rolePermissions = new RolePermissionsModel(this.server, this.db);
         this.customers = new CustomersModel(this.server, this.db);
+        this.warehouses = new WarehousesModel(this.server, this.db);
 
         // Associations
         this.users.table.belongsToMany(this.roles.table, {
