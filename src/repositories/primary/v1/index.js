@@ -2,3 +2,7 @@ export { default as UserRepository } from "./User.repository.js";
 export { default as CustomerRepository } from "./Customer.repository.js";
 export { default as WarehouseRepository } from "./Warehouse.repository.js";
 export { default as RoleRepository } from "./Role.repository.js";
+export { default as ProductCategoryRepository } from "./ProductCategory.repository.js";
+export { default as UnitRepository } from "./Unit.repository.js";
+export { default as TaxRepository } from "./Tax.repository.js";
+export { default as ProductRepository } from "./Product.repository.js";

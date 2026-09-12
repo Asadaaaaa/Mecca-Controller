@@ -3,3 +3,7 @@ export { default as CustomerValidator } from "./Customer.validator.js";
 export { default as WarehouseValidator } from "./Warehouse.validator.js";
 export { default as RoleValidator } from "./Role.validator.js";
 export { default as UserValidator } from "./User.validator.js";
+export { default as ProductCategoryValidator } from "./ProductCategory.validator.js";
+export { default as UnitValidator } from "./Unit.validator.js";
+export { default as TaxValidator } from "./Tax.validator.js";
+export { default as ProductValidator } from "./Product.validator.js";

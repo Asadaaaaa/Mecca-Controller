@@ -3,3 +3,7 @@ export { default as CustomerRoute } from "./Customer.route.js";
 export { default as WarehouseRoute } from "./Warehouse.route.js";
 export { default as RoleRoute } from "./Role.route.js";
 export { default as UserRoute } from "./User.route.js";
+export { default as ProductCategoryRoute } from "./ProductCategory.route.js";
+export { default as UnitRoute } from "./Unit.route.js";
+export { default as TaxRoute } from "./Tax.route.js";
+export { default as ProductRoute } from "./Product.route.js";

@@ -3,3 +3,7 @@ export { default as CustomerService } from './Customer.service.js';
 export { default as WarehouseService } from './Warehouse.service.js';
 export { default as RoleService } from './Role.service.js';
 export { default as UserService } from './User.service.js';
+export { default as ProductCategoryService } from './ProductCategory.service.js';
+export { default as UnitService } from './Unit.service.js';
+export { default as TaxService } from './Tax.service.js';
+export { default as ProductService } from './Product.service.js';

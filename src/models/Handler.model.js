@@ -7,6 +7,10 @@ import UserRolesModel from "./UserRoles.model.js";
 import RolePermissionsModel from "./RolePermissions.model.js";
 import CustomersModel from "./Customers.model.js";
 import WarehousesModel from "./Warehouses.model.js";
+import ProductCategoriesModel from "./ProductCategories.model.js";
+import UnitsModel from "./Units.model.js";
+import TaxesModel from "./Taxes.model.js";
+import ProductsModel from "./Products.model.js";
 
 class Handler {
     constructor(server) {
@@ -43,6 +47,10 @@ class Handler {
         this.rolePermissions = new RolePermissionsModel(this.server, this.db);
         this.customers = new CustomersModel(this.server, this.db);
         this.warehouses = new WarehousesModel(this.server, this.db);
+        this.productCategories = new ProductCategoriesModel(this.server, this.db);
+        this.units = new UnitsModel(this.server, this.db);
+        this.taxes = new TaxesModel(this.server, this.db);
+        this.products = new ProductsModel(this.server, this.db);
 
         // Associations
         this.users.table.belongsToMany(this.roles.table, {
@@ -69,6 +77,34 @@ class Handler {
             foreignKey: 'permission_id',
             otherKey: 'role_id',
             as: 'roles'
+        });
+
+        // Product Module Associations
+        this.products.table.belongsTo(this.productCategories.table, {
+            foreignKey: 'category_id',
+            as: 'category'
+        });
+        this.productCategories.table.hasMany(this.products.table, {
+            foreignKey: 'category_id',
+            as: 'products'
+        });
+
+        this.products.table.belongsTo(this.units.table, {
+            foreignKey: 'unit_id',
+            as: 'unit'
+        });
+        this.units.table.hasMany(this.products.table, {
+            foreignKey: 'unit_id',
+            as: 'products'
+        });
+
+        this.products.table.belongsTo(this.taxes.table, {
+            foreignKey: 'tax_id',
+            as: 'tax'
+        });
+        this.taxes.table.hasMany(this.products.table, {
+            foreignKey: 'tax_id',
+            as: 'products'
         });
 
         return this.db;

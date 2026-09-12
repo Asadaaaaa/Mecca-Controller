@@ -1,0 +1,52 @@
+import { DataTypes } from "sequelize";
+
+class ProductCategoriesModel {
+  constructor(server, db = null) {
+    const database = db || server.model.db;
+    const table = database.define('product_categories', {
+      id: {
+        type: DataTypes.BIGINT,
+        allowNull: false,
+        primaryKey: true,
+        autoIncrement: true
+      },
+      code: {
+        type: DataTypes.STRING(50),
+        allowNull: false,
+        unique: true
+      },
+      name: {
+        type: DataTypes.STRING(150),
+        allowNull: false
+      },
+      description: {
+        type: DataTypes.TEXT,
+        allowNull: true
+      },
+      status: {
+        type: DataTypes.STRING(20),
+        allowNull: false,
+        defaultValue: 'active'
+      },
+      created_at: {
+        type: DataTypes.DATE,
+        allowNull: false,
+        defaultValue: DataTypes.NOW
+      },
+      updated_at: {
+        type: DataTypes.DATE,
+        allowNull: false,
+        defaultValue: DataTypes.NOW
+      }
+    }, {
+      tableName: 'product_categories',
+      timestamps: true,
+      createdAt: 'created_at',
+      updatedAt: 'updated_at'
+    });
+
+    this.table = table;
+  }
+}
+
+export default ProductCategoriesModel;

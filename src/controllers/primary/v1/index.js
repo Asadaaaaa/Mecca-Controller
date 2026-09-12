@@ -3,3 +3,7 @@ export { default as CustomerController } from "./Customer.controller.js";
 export { default as WarehouseController } from "./Warehouse.controller.js";
 export { default as RoleController } from "./Role.controller.js";
 export { default as UserController } from "./User.controller.js";
+export { default as ProductCategoryController } from "./ProductCategory.controller.js";
+export { default as UnitController } from "./Unit.controller.js";
+export { default as TaxController } from "./Tax.controller.js";
+export { default as ProductController } from "./Product.controller.js";
