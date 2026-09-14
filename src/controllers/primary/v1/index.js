@@ -7,3 +7,4 @@ export { default as ProductCategoryController } from "./ProductCategory.controll
 export { default as UnitController } from "./Unit.controller.js";
 export { default as TaxController } from "./Tax.controller.js";
 export { default as ProductController } from "./Product.controller.js";
+export { default as InventoryController } from "./Inventory.controller.js";

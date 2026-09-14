@@ -7,3 +7,4 @@ export { default as ProductCategoryValidator } from "./ProductCategory.validator
 export { default as UnitValidator } from "./Unit.validator.js";
 export { default as TaxValidator } from "./Tax.validator.js";
 export { default as ProductValidator } from "./Product.validator.js";
+export { default as InventoryValidator } from "./Inventory.validator.js";

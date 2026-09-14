@@ -7,3 +7,4 @@ export { default as ProductCategoryRoute } from "./ProductCategory.route.js";
 export { default as UnitRoute } from "./Unit.route.js";
 export { default as TaxRoute } from "./Tax.route.js";
 export { default as ProductRoute } from "./Product.route.js";
+export { default as InventoryRoute } from "./Inventory.route.js";

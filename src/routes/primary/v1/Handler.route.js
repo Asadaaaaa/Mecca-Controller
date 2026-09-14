@@ -7,7 +7,8 @@ import {
   ProductCategoryRoute,
   UnitRoute,
   TaxRoute,
-  ProductRoute
+  ProductRoute,
+  InventoryRoute
 } from '#routesPrimaryV1';
 
 class PrimaryHandlerV1 {
@@ -23,6 +24,7 @@ class PrimaryHandlerV1 {
     new UnitRoute(server, endpointPrefix);
     new TaxRoute(server, endpointPrefix);
     new ProductRoute(server, endpointPrefix);
+    new InventoryRoute(server, endpointPrefix);
   }
 }
 

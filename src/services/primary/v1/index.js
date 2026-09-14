@@ -7,3 +7,4 @@ export { default as ProductCategoryService } from './ProductCategory.service.js'
 export { default as UnitService } from './Unit.service.js';
 export { default as TaxService } from './Tax.service.js';
 export { default as ProductService } from './Product.service.js';
+export { default as InventoryService } from './Inventory.service.js';

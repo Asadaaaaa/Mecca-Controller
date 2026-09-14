@@ -11,6 +11,11 @@ import ProductCategoriesModel from "./ProductCategories.model.js";
 import UnitsModel from "./Units.model.js";
 import TaxesModel from "./Taxes.model.js";
 import ProductsModel from "./Products.model.js";
+import WarehouseStocksModel from "./WarehouseStocks.model.js";
+import StockMovementsModel from "./StockMovements.model.js";
+import StockOpnamesModel from "./StockOpnames.model.js";
+import StockOpnameItemsModel from "./StockOpnameItems.model.js";
+import StockWastesModel from "./StockWastes.model.js";
 
 class Handler {
     constructor(server) {
@@ -51,6 +56,11 @@ class Handler {
         this.units = new UnitsModel(this.server, this.db);
         this.taxes = new TaxesModel(this.server, this.db);
         this.products = new ProductsModel(this.server, this.db);
+        this.warehouseStocks = new WarehouseStocksModel(this.server, this.db);
+        this.stockMovements = new StockMovementsModel(this.server, this.db);
+        this.stockOpnames = new StockOpnamesModel(this.server, this.db);
+        this.stockOpnameItems = new StockOpnameItemsModel(this.server, this.db);
+        this.stockWastes = new StockWastesModel(this.server, this.db);
 
         // Associations
         this.users.table.belongsToMany(this.roles.table, {
@@ -105,6 +115,73 @@ class Handler {
         this.taxes.table.hasMany(this.products.table, {
             foreignKey: 'tax_id',
             as: 'products'
+        });
+
+        // Inventory Module Associations
+        this.warehouseStocks.table.belongsTo(this.warehouses.table, {
+            foreignKey: 'warehouse_id',
+            as: 'warehouse'
+        });
+        this.warehouses.table.hasMany(this.warehouseStocks.table, {
+            foreignKey: 'warehouse_id',
+            as: 'stocks'
+        });
+
+        this.warehouseStocks.table.belongsTo(this.products.table, {
+            foreignKey: 'product_id',
+            as: 'product'
+        });
+        this.products.table.hasMany(this.warehouseStocks.table, {
+            foreignKey: 'product_id',
+            as: 'stocks'
+        });
+
+        this.stockMovements.table.belongsTo(this.warehouses.table, {
+            foreignKey: 'warehouse_id',
+            as: 'warehouse'
+        });
+        this.stockMovements.table.belongsTo(this.products.table, {
+            foreignKey: 'product_id',
+            as: 'product'
+        });
+        this.stockMovements.table.belongsTo(this.users.table, {
+            foreignKey: 'created_by',
+            as: 'creator'
+        });
+
+        this.stockOpnames.table.belongsTo(this.warehouses.table, {
+            foreignKey: 'warehouse_id',
+            as: 'warehouse'
+        });
+        this.stockOpnames.table.belongsTo(this.users.table, {
+            foreignKey: 'created_by',
+            as: 'creator'
+        });
+        this.stockOpnames.table.hasMany(this.stockOpnameItems.table, {
+            foreignKey: 'stock_opname_id',
+            as: 'items'
+        });
+
+        this.stockOpnameItems.table.belongsTo(this.stockOpnames.table, {
+            foreignKey: 'stock_opname_id',
+            as: 'opname'
+        });
+        this.stockOpnameItems.table.belongsTo(this.products.table, {
+            foreignKey: 'product_id',
+            as: 'product'
+        });
+
+        this.stockWastes.table.belongsTo(this.warehouses.table, {
+            foreignKey: 'warehouse_id',
+            as: 'warehouse'
+        });
+        this.stockWastes.table.belongsTo(this.products.table, {
+            foreignKey: 'product_id',
+            as: 'product'
+        });
+        this.stockWastes.table.belongsTo(this.users.table, {
+            foreignKey: 'created_by',
+            as: 'creator'
         });
 
         return this.db;

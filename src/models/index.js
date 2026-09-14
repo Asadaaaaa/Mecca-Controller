@@ -10,3 +10,8 @@ export { default as ProductCategoriesModel } from "./ProductCategories.model.js"
 export { default as UnitsModel } from "./Units.model.js";
 export { default as TaxesModel } from "./Taxes.model.js";
 export { default as ProductsModel } from "./Products.model.js";
+export { default as WarehouseStocksModel } from "./WarehouseStocks.model.js";
+export { default as StockMovementsModel } from "./StockMovements.model.js";
+export { default as StockOpnamesModel } from "./StockOpnames.model.js";
+export { default as StockOpnameItemsModel } from "./StockOpnameItems.model.js";
+export { default as StockWastesModel } from "./StockWastes.model.js";

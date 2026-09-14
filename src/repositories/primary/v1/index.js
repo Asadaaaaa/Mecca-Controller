@@ -6,3 +6,4 @@ export { default as ProductCategoryRepository } from "./ProductCategory.reposito
 export { default as UnitRepository } from "./Unit.repository.js";
 export { default as TaxRepository } from "./Tax.repository.js";
 export { default as ProductRepository } from "./Product.repository.js";
+export { default as InventoryRepository } from "./Inventory.repository.js";
