@@ -16,6 +16,12 @@ import StockMovementsModel from "./StockMovements.model.js";
 import StockOpnamesModel from "./StockOpnames.model.js";
 import StockOpnameItemsModel from "./StockOpnameItems.model.js";
 import StockWastesModel from "./StockWastes.model.js";
+import QuotationsModel from "./Quotations.model.js";
+import QuotationItemsModel from "./QuotationItems.model.js";
+import SalesOrdersModel from "./SalesOrders.model.js";
+import SalesOrderItemsModel from "./SalesOrderItems.model.js";
+import DeliveriesModel from "./Deliveries.model.js";
+import DeliveryItemsModel from "./DeliveryItems.model.js";
 
 class Handler {
     constructor(server) {
@@ -61,6 +67,12 @@ class Handler {
         this.stockOpnames = new StockOpnamesModel(this.server, this.db);
         this.stockOpnameItems = new StockOpnameItemsModel(this.server, this.db);
         this.stockWastes = new StockWastesModel(this.server, this.db);
+        this.quotations = new QuotationsModel(this.server, this.db);
+        this.quotationItems = new QuotationItemsModel(this.server, this.db);
+        this.salesOrders = new SalesOrdersModel(this.server, this.db);
+        this.salesOrderItems = new SalesOrderItemsModel(this.server, this.db);
+        this.deliveries = new DeliveriesModel(this.server, this.db);
+        this.deliveryItems = new DeliveryItemsModel(this.server, this.db);
 
         // Associations
         this.users.table.belongsToMany(this.roles.table, {
@@ -182,6 +194,100 @@ class Handler {
         this.stockWastes.table.belongsTo(this.users.table, {
             foreignKey: 'created_by',
             as: 'creator'
+        });
+
+        // Quotation Associations
+        this.quotations.table.belongsTo(this.customers.table, {
+            foreignKey: 'customer_id',
+            as: 'customer'
+        });
+        this.quotations.table.belongsTo(this.users.table, {
+            foreignKey: 'created_by',
+            as: 'creator'
+        });
+        this.quotations.table.hasMany(this.quotationItems.table, {
+            foreignKey: 'quotation_id',
+            as: 'items'
+        });
+        this.quotationItems.table.belongsTo(this.quotations.table, {
+            foreignKey: 'quotation_id',
+            as: 'quotation'
+        });
+        this.quotationItems.table.belongsTo(this.products.table, {
+            foreignKey: 'product_id',
+            as: 'product'
+        });
+
+        // Sales Order Associations
+        this.salesOrders.table.belongsTo(this.customers.table, {
+            foreignKey: 'customer_id',
+            as: 'customer'
+        });
+        this.salesOrders.table.belongsTo(this.quotations.table, {
+            foreignKey: 'quotation_id',
+            as: 'quotation'
+        });
+        this.salesOrders.table.belongsTo(this.warehouses.table, {
+            foreignKey: 'warehouse_id',
+            as: 'warehouse'
+        });
+        this.salesOrders.table.belongsTo(this.users.table, {
+            foreignKey: 'created_by',
+            as: 'creator'
+        });
+        this.salesOrders.table.hasMany(this.salesOrderItems.table, {
+            foreignKey: 'sales_order_id',
+            as: 'items'
+        });
+        this.salesOrders.table.hasMany(this.deliveries.table, {
+            foreignKey: 'sales_order_id',
+            as: 'deliveries'
+        });
+        this.salesOrderItems.table.belongsTo(this.salesOrders.table, {
+            foreignKey: 'sales_order_id',
+            as: 'salesOrder'
+        });
+        this.salesOrderItems.table.belongsTo(this.products.table, {
+            foreignKey: 'product_id',
+            as: 'product'
+        });
+        this.salesOrderItems.table.hasMany(this.deliveryItems.table, {
+            foreignKey: 'sales_order_item_id',
+            as: 'deliveryItems'
+        });
+
+        // Delivery Associations
+        this.deliveries.table.belongsTo(this.salesOrders.table, {
+            foreignKey: 'sales_order_id',
+            as: 'salesOrder'
+        });
+        this.deliveries.table.belongsTo(this.warehouses.table, {
+            foreignKey: 'warehouse_id',
+            as: 'warehouse'
+        });
+        this.deliveries.table.belongsTo(this.customers.table, {
+            foreignKey: 'customer_id',
+            as: 'customer'
+        });
+        this.deliveries.table.belongsTo(this.users.table, {
+            foreignKey: 'created_by',
+            as: 'creator'
+        });
+        this.deliveries.table.hasMany(this.deliveryItems.table, {
+            foreignKey: 'delivery_id',
+            as: 'items'
+        });
+        this.deliveryItems.table.belongsTo(this.deliveries.table, {
+            foreignKey: 'delivery_id',
+            as: 'delivery'
+        });
+        this.deliveryItems.table.belongsTo(this.salesOrderItems.table, {
+            foreignKey: 'sales_order_item_id',
+            as: 'salesOrderItem'
+        });
+        this.deliveryItems.table.belongsTo(this.products.table, {
+            foreignKey: 'product_id',
+            as: 'product'
         });
 
         return this.db;

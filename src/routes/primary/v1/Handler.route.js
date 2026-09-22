@@ -8,7 +8,10 @@ import {
   UnitRoute,
   TaxRoute,
   ProductRoute,
-  InventoryRoute
+  InventoryRoute,
+  QuotationRoute,
+  SalesOrderRoute,
+  DeliveryRoute
 } from '#routesPrimaryV1';
 
 class PrimaryHandlerV1 {
@@ -25,6 +28,9 @@ class PrimaryHandlerV1 {
     new TaxRoute(server, endpointPrefix);
     new ProductRoute(server, endpointPrefix);
     new InventoryRoute(server, endpointPrefix);
+    new QuotationRoute(server, endpointPrefix);
+    new SalesOrderRoute(server, endpointPrefix);
+    new DeliveryRoute(server, endpointPrefix);
   }
 }
 

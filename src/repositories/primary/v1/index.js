@@ -7,3 +7,6 @@ export { default as UnitRepository } from "./Unit.repository.js";
 export { default as TaxRepository } from "./Tax.repository.js";
 export { default as ProductRepository } from "./Product.repository.js";
 export { default as InventoryRepository } from "./Inventory.repository.js";
+export { default as QuotationRepository } from "./Quotation.repository.js";
+export { default as SalesOrderRepository } from "./SalesOrder.repository.js";
+export { default as DeliveryRepository } from "./Delivery.repository.js";

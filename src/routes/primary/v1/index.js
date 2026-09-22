@@ -8,3 +8,6 @@ export { default as UnitRoute } from "./Unit.route.js";
 export { default as TaxRoute } from "./Tax.route.js";
 export { default as ProductRoute } from "./Product.route.js";
 export { default as InventoryRoute } from "./Inventory.route.js";
+export { default as QuotationRoute } from "./Quotation.route.js";
+export { default as SalesOrderRoute } from "./SalesOrder.route.js";
+export { default as DeliveryRoute } from "./Delivery.route.js";
