@@ -892,18 +892,18 @@ Delivery: DO-001        Delivery: DO-002
   - `/inventory/opname` (Daftar Sesi Opname, 4 KPI cards, Modal Buat Sesi Opname, Detail Modal, Tombol Persetujuan, Export CSV)
   - `/inventory/waste` (Pencatatan Stok Rusak/Waste, 4 KPI cards, Modal Catat Barang Rusak, Tombol Persetujuan, Export CSV)
 
-### Phase 5 — Penjualan: Penawaran & Pesanan (Status: IN PROGRESS / Frontend Completed)
-* Migrasi tabel: `quotations`, `quotation_items`, `sales_orders`, `sales_order_items`
-* Backend: Penomoran otomatis `QT-...` dan `SO-...`, Approval Quotation, Convert to Sales Order, Konfirmasi Order
-* Frontend Penjualan (Selesai dengan dummy data & 4 kartu KPI):
-  * [x] `/quotations` (Daftar Penawaran Harga, Valid Until, Nilai Pipeline, Win Rate)
-  * [x] `/sales-orders` (Daftar Pesanan Penjualan, Alokasi Gudang, Status Pemenuhan)
+### Phase 5 — Penjualan: Penawaran & Pesanan (Status: COMPLETED / 100%)
+* [x] Migrasi tabel: `quotations`, `quotation_items`, `sales_orders`, `sales_order_items`
+* [x] Backend: Penomoran otomatis `QT-YYYYMM-XXX` dan `SO-YYYYMM-XXX`, Approval/Reject Quotation, Convert to Sales Order, Konfirmasi Order, Detail & Metrics
+* [x] Frontend Penjualan terintegrasi API riil:
+  * [x] `/quotations` (Daftar Penawaran Harga, Valid Until, Nilai Pipeline, Win Rate, Modal Buat Quotation, Pratinjau Detail, Setujui, Tolak, Konversi ke Sales Order, Hapus & Batch Delete)
+  * [x] `/sales-orders` (Daftar Pesanan Penjualan, Alokasi Gudang, Status Pemenuhan, Modal Buat Sales Order, Pratinjau Detail, Konfirmasi Pesanan, Batalkan, Buat Surat Jalan, Hapus & Batch Delete)
 
-### Phase 6 — Penjualan: Surat Jalan (Delivery) (Status: IN PROGRESS / Frontend Completed)
-* Migrasi tabel: `deliveries`, `delivery_items`
-* Backend: Alur Partial Delivery, Validasi Saldo Stok Gudang, Eksekusi Pemotongan Stok Atomik di Database Transaction & Riwayat `stock_movements`
-* Frontend (Selesai dengan dummy data & 4 kartu KPI):
-  * [x] `/deliveries` (Daftar Pengiriman Penjualan, Armada Kurir, Status POD / Perjalanan)
+### Phase 6 — Penjualan: Surat Jalan (Delivery & Pemotongan Stok) (Status: COMPLETED / 100%)
+* [x] Migrasi tabel: `deliveries`, `delivery_items`
+* [x] Backend: Alur Partial Delivery, Validasi Saldo Stok Gudang, Eksekusi Pemotongan Stok Atomik di Database Transaction & Riwayat `stock_movements` (tipe `SALES_DELIVERY`), Update Otomatis Status Sales Order (`Proses Kirim` / `Selesai Dikirim`)
+* [x] Frontend Surat Jalan terintegrasi API riil:
+  * [x] `/deliveries` (Daftar Pengiriman Penjualan, Armada Kurir, Status POD / Perjalanan, Modal Buat Surat Jalan, Detail Muatan, Tombol "Kirim & Potong Stok" Atomik, Tandai Diterima, Cetak Dokumen Surat Jalan, Hapus & Batch Delete)
 
 ### Phase 7 — Penjualan: Daftar Invoice (Status: IN PROGRESS / Frontend Completed)
 * Migrasi tabel: `invoices`, `invoice_items`
