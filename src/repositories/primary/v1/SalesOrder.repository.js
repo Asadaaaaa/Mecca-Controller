@@ -61,6 +61,22 @@ class SalesOrderRepository {
         const offset = (parseInt(page, 10) - 1) * parseInt(limit, 10);
         const actualLimit = parseInt(limit, 10);
 
+        const sortFieldMap = {
+            'id': 'id',
+            'date': 'order_date',
+            'order_date': 'order_date',
+            'orderNo': 'sales_order_number',
+            'sales_order_number': 'sales_order_number',
+            'totalAmount': 'grand_total',
+            'grand_total': 'grand_total',
+            'subtotal': 'subtotal',
+            'status': 'status',
+            'created_at': 'created_at',
+            'updated_at': 'updated_at'
+        };
+        const actualSort = sortFieldMap[sort] || 'order_date';
+        const actualOrder = (order && order.toUpperCase() === 'ASC') ? 'ASC' : 'DESC';
+
         return await this.salesOrderTable.findAndCountAll({
             where,
             include: [
@@ -96,7 +112,7 @@ class SalesOrderRepository {
                     ]
                 }
             ],
-            order: [[sort, order.toUpperCase()]],
+            order: [[actualSort, actualOrder]],
             offset,
             limit: actualLimit,
             distinct: true

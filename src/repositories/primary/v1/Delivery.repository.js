@@ -64,6 +64,19 @@ class DeliveryRepository {
         const offset = (parseInt(page, 10) - 1) * parseInt(limit, 10);
         const actualLimit = parseInt(limit, 10);
 
+        const sortFieldMap = {
+            'id': 'id',
+            'date': 'delivery_date',
+            'delivery_date': 'delivery_date',
+            'deliveryNo': 'delivery_number',
+            'delivery_number': 'delivery_number',
+            'status': 'status',
+            'created_at': 'created_at',
+            'updated_at': 'updated_at'
+        };
+        const actualSort = sortFieldMap[sort] || 'delivery_date';
+        const actualOrder = (order && order.toUpperCase() === 'ASC') ? 'ASC' : 'DESC';
+
         return await this.deliveryTable.findAndCountAll({
             where,
             include: [
@@ -104,7 +117,7 @@ class DeliveryRepository {
                     ]
                 }
             ],
-            order: [[sort, order.toUpperCase()]],
+            order: [[actualSort, actualOrder]],
             offset,
             limit: actualLimit,
             distinct: true
