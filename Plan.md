@@ -930,9 +930,10 @@ Delivery: DO-001        Delivery: DO-002
   * [x] `/payments` (Daftar Penerimaan Pembayaran, 4 Kartu Metrik Kas Riil, Filter Status & Metode Bayar, Sorting, Modal Input Pembayaran & Alokasi Multi-Faktur Interaktif dengan Auto-FIFO, Pratinjau Rincian Alokasi, Cetak Kuitansi Resmi dengan Format Terbilang Rupiah & Tanda Tangan Kasir, Export CSV, Hapus & Batch Delete)
   * [x] Tombol pintas "Catat Pembayaran" langsung dari halaman `/invoices`
 
-### Phase 9 — Dashboard Analytics Realtime (Status: PENDING)
-* Endpoint agregasi metrik penjualan, piutang, mutasi stok, dan laba kotor terfilter rentang tanggal
-* Integrasi realtime backend ke Dashboard Overview via Date Range Picker
+### Phase 9 — Dashboard Analytics Realtime (Status: COMPLETED / 100%)
+* [x] Endpoint agregasi metrik penjualan, piutang, rasio pelunasan, dan tren penjualan terfilter rentang tanggal (`GET /primary/v1/dashboard/metrics`, `GET /primary/v1/dashboard/sales-trend`)
+* [x] Endpoint transaksi terkini riil menggabungkan Faktur dan Pembayaran terbaru (`GET /primary/v1/dashboard/recent-transactions`)
+* [x] Integrasi frontend Date Range Picker interaktif, visualisasi grafik komparasi omzet vs kas masuk, dan tabel transaksi terbaru riil
 
 ### Phase 10 — Finalization & QA (Status: PENDING)
 * Audit komprehensif Role-Based Access Control (RBAC) pada seluruh endpoint
@@ -954,8 +955,8 @@ Delivery: DO-001        Delivery: DO-002
   * Penjualan: Daftar Payments & Alokasi (Phase 8)
 
 * **P1 — Supporting (Fitur Penunjang & Efisiensi)**:
-  * Dashboard KPI Metrics Realtime
-  * Reporting & Data Export (PDF/Excel)
+  * Dashboard KPI Metrics Realtime (Phase 9 — Selesai)
+  * Reporting & Data Export (PDF/Excel/CSV)
   * Role & Permission Granular Access Control
   * Document Audit Trail & Relationship Tracking
 
@@ -1037,42 +1038,43 @@ Delivery: DO-001        Delivery: DO-002
 - [x] **Dashboard (UI)**: Halaman `/inventory/waste` (Pencatatan barang rusak/terbuang, estimasi rugi, 4 KPI, Tombol persetujuan, Export CSV)
 - [x] **Dashboard (Integration)**: Dialog modal Stock Adjustment, Form Opname, Form Waste + tipe TypeScript & service API client riil
 
-### 21.6 Modul Penjualan: Penawaran (Quotation) & Pesanan (Sales Order) (Status: BACKEND & DB PENDING)
-- [ ] **Database**: Migration tabel `quotations`, `quotation_items`, `sales_orders`, `sales_order_items`
-- [ ] **Controller**: Model Sequelize `Quotations`, `QuotationItems`, `SalesOrders`, `SalesOrderItems`
-- [ ] **Controller**: Endpoint Quotation CRUD, Approve, Reject, dan Convert to Sales Order (`QT-YYYY-XXXXXX`)
-- [ ] **Controller**: Endpoint Sales Order CRUD, Confirm, Kalkulasi Subtotal/Diskon/PPN/Grand Total (`SO-YYYY-XXXXXX`)
+### 21.6 Modul Penjualan: Penawaran (Quotation) & Pesanan (Sales Order) (Status: SELESAI / 100%)
+- [x] **Database**: Migration tabel `quotations`, `quotation_items`, `sales_orders`, `sales_order_items`
+- [x] **Controller**: Model Sequelize `Quotations`, `QuotationItems`, `SalesOrders`, `SalesOrderItems`
+- [x] **Controller**: Endpoint Quotation CRUD, Approve, Reject, dan Convert to Sales Order (`QT-YYYY-XXXXXX`)
+- [x] **Controller**: Endpoint Sales Order CRUD, Confirm, Kalkulasi Subtotal/Diskon/PPN/Grand Total (`SO-YYYY-XXXXXX`)
 - [x] **Dashboard (UI)**: Halaman `/quotations` (Daftar penawaran, nilai pipeline, win rate, 4 KPI)
 - [x] **Dashboard (UI)**: Halaman `/sales-orders` (Daftar pesanan penjualan, status pemenuhan, 4 KPI)
-- [ ] **Dashboard (Integration)**: Form transaksi Quotation, tombol aksi Approve/Convert, Form Sales Order + koneksi API real
+- [x] **Dashboard (Integration)**: Form transaksi Quotation, tombol aksi Approve/Convert, Form Sales Order + koneksi API real
 
-### 21.7 Modul Penjualan: Surat Jalan (Delivery) & Pemotongan Stok (Status: BACKEND & DB PENDING)
-- [ ] **Database**: Migration tabel `deliveries`, `delivery_items`
-- [ ] **Controller**: Model Sequelize `Deliveries`, `DeliveryItems`
-- [ ] **Controller**: Endpoint Delivery CRUD (`DO-YYYY-XXXXXX`)
-- [ ] **Controller**: Endpoint Delivery Confirm (`POST /primary/v1/deliveries/:id/confirm`) dengan transaksi atomik pemotongan `warehouse_stocks` & insert `stock_movements` (type `SALES_DELIVERY`)
+### 21.7 Modul Penjualan: Surat Jalan (Delivery) & Pemotongan Stok (Status: SELESAI / 100%)
+- [x] **Database**: Migration tabel `deliveries`, `delivery_items`
+- [x] **Controller**: Model Sequelize `Deliveries`, `DeliveryItems`
+- [x] **Controller**: Endpoint Delivery CRUD (`DO-YYYY-XXXXXX`)
+- [x] **Controller**: Endpoint Delivery Confirm (`POST /primary/v1/deliveries/:id/confirm`) dengan transaksi atomik pemotongan `warehouse_stocks` & insert `stock_movements` (type `SALES_DELIVERY`)
 - [x] **Dashboard (UI)**: Halaman `/deliveries` (Daftar pengiriman, ekspedisi/kurir, status POD, 4 KPI)
-- [ ] **Dashboard (Integration)**: Modal buat Surat Jalan dari Sales Order, tombol Konfirmasi Pengiriman + koneksi API real
+- [x] **Dashboard (Integration)**: Modal buat Surat Jalan dari Sales Order, tombol Konfirmasi Pengiriman + koneksi API real
 
-### 21.8 Modul Penjualan: Faktur Penjualan (Invoice) (Status: BACKEND & DB PENDING)
-- [ ] **Database**: Migration tabel `invoices`, `invoice_items`
-- [ ] **Controller**: Model Sequelize `Invoices`, `InvoiceItems`
-- [ ] **Controller**: Endpoint Invoice CRUD (`INV-YYYY-XXXXXX`) dibuat dari 1 atau beberapa Delivery terkonfirmasi
-- [ ] **Controller**: Endpoint Invoice Cancel & kalkulasi jatuh tempo
+### 21.8 Modul Penjualan: Faktur Penjualan (Invoice) (Status: SELESAI / 100%)
+- [x] **Database**: Migration tabel `invoices`, `invoice_items`
+- [x] **Controller**: Model Sequelize `Invoices`, `InvoiceItems`
+- [x] **Controller**: Endpoint Invoice CRUD (`INV-YYYY-XXXXXX`) dibuat dari 1 atau beberapa Delivery terkonfirmasi
+- [x] **Controller**: Endpoint Invoice Cancel & kalkulasi jatuh tempo
 - [x] **Dashboard (UI)**: Halaman `/invoices` (Daftar faktur, sisa tagihan, status overdue/unpaid, 4 KPI)
-- [ ] **Dashboard (Integration)**: Modal buat Invoice dari Delivery, cetak PDF invoice + koneksi API real
+- [x] **Dashboard (Integration)**: Modal buat Invoice dari Delivery, cetak PDF invoice + koneksi API real
 
-### 21.9 Modul Penjualan: Pembayaran (Payment Receipt & Allocation) (Status: BACKEND & DB PENDING)
-- [ ] **Database**: Migration tabel `payments`, `payment_allocations`
-- [ ] **Controller**: Model Sequelize `Payments`, `PaymentAllocations`
-- [ ] **Controller**: Endpoint Payment CRUD (`PAY-YYYY-XXXXXX`)
-- [ ] **Controller**: Endpoint Alokasi Pembayaran Multi-Invoice (`POST /primary/v1/payments/:id/allocate`) & auto update status Invoice (`PARTIALLY_PAID` / `PAID`)
+### 21.9 Modul Penjualan: Pembayaran (Payment Receipt & Allocation) (Status: SELESAI / 100%)
+- [x] **Database**: Migration tabel `payments`, `payment_allocations`
+- [x] **Controller**: Model Sequelize `Payments`, `PaymentAllocations`
+- [x] **Controller**: Endpoint Payment CRUD (`PAY-YYYY-XXXXXX`)
+- [x] **Controller**: Endpoint Alokasi Pembayaran Multi-Invoice (`POST /primary/v1/payments/:id/allocate`) & auto update status Invoice (`PARTIALLY_PAID` / `PAID`)
 - [x] **Dashboard (UI)**: Halaman `/payments` (Daftar pembayaran, metode transfer/kas, status settlement, 4 KPI)
-- [ ] **Dashboard (Integration)**: Modal input penerimaan pembayaran & form alokasi invoice + koneksi API real
+- [x] **Dashboard (Integration)**: Modal input penerimaan pembayaran & form alokasi invoice + koneksi API real
 
-### 21.10 Modul Dashboard Overview & Realtime Analytics (Status: BACKEND PENDING)
-- [ ] **Controller**: Endpoint metrik ringkasan KPI penjualan & transaksi (`GET /primary/v1/dashboard/metrics?start_date=...&end_date=...`)
-- [ ] **Controller**: Endpoint 5 transaksi penjualan terkini (`GET /primary/v1/dashboard/recent-transactions`)
-- [x] **Dashboard (UI)**: Layout overview 4 KPI card, Date Range Picker interaktif, chart rasio pembayaran, recent transactions table
-- [ ] **Dashboard (Integration)**: Koneksi Date Range Picker ke API endpoint dashboard metrics & recent transactions real-time
+### 21.10 Modul Dashboard Overview & Realtime Analytics (Status: SELESAI / 100%)
+- [x] **Controller**: Endpoint metrik ringkasan KPI penjualan & transaksi (`GET /primary/v1/dashboard/metrics?start_date=...&end_date=...`)
+- [x] **Controller**: Endpoint 5 transaksi penjualan terkini gabungan Faktur & Pembayaran (`GET /primary/v1/dashboard/recent-transactions`)
+- [x] **Controller**: Endpoint grafik tren penjualan dan koleksi kas harian (`GET /primary/v1/dashboard/sales-trend`)
+- [x] **Dashboard (UI)**: Layout overview 4 KPI card, Date Range Picker interaktif, chart tren komparasi penjualan vs kas tertagih, recent transactions table
+- [x] **Dashboard (Integration)**: Koneksi Date Range Picker ke API endpoint dashboard metrics, sales trend & recent transactions real-time
 
