@@ -917,11 +917,18 @@ Delivery: DO-001        Delivery: DO-002
   * [x] `/invoices` (Daftar Faktur Komersial, 4 Kartu Metrik Piutang Riil, Filter Status, Sorting, Pencarian, Modal Penerbitan Faktur dari DO / Manual, Pratinjau Rincian Tagihan, Cetak Dokumen Faktur Komersial dengan Rekening Bank & Tanda Tangan, Export CSV, Hapus & Batch Delete)
   * [x] Tombol pintas "Terbitkan Faktur" di halaman `/deliveries`
 
-### Phase 8 — Penjualan: Daftar Payments (Status: IN PROGRESS / Frontend Completed)
-* Migrasi tabel: `payments`, `payment_allocations`
-* Backend: Pencatatan bukti bayar kas/transfer, alokasi fleksibel multi-invoice, otomatisasi update status lunas/parsial invoice
-* Frontend (Selesai dengan dummy data & 4 kartu KPI):
-  * [x] `/payments` (Daftar Payments, Rekening Kas/Giro, Status Settlement, Cetak Kuitansi)
+### Phase 8 — Penjualan: Daftar Payments & Alokasi (Status: COMPLETED / 100%)
+* [x] Migrasi tabel: `payments`, `payment_allocations`
+* [x] Backend:
+  * Penomoran otomatis format `PAY-YYYYMM-XXX`
+  * Relasi transaksi: Payment → Customer, User Creator, PaymentAllocations, dan Invoices
+  * Pencatatan penerimaan kas masuk, transfer perbankan, dan kliring giro
+  * Alokasi fleksibel multi-invoice dengan validasi total nominal & batas sisa piutang
+  * Sinkronisasi atomik status faktur (`Belum Dibayar` → `Sebagian` → `Lunas`) serta rollback otomatis saat transaksi dihapus
+  * Endpoint CRUD, metrik settlement/pending/top channel, dan batch delete
+* [x] Frontend terintegrasi API riil:
+  * [x] `/payments` (Daftar Penerimaan Pembayaran, 4 Kartu Metrik Kas Riil, Filter Status & Metode Bayar, Sorting, Modal Input Pembayaran & Alokasi Multi-Faktur Interaktif dengan Auto-FIFO, Pratinjau Rincian Alokasi, Cetak Kuitansi Resmi dengan Format Terbilang Rupiah & Tanda Tangan Kasir, Export CSV, Hapus & Batch Delete)
+  * [x] Tombol pintas "Catat Pembayaran" langsung dari halaman `/invoices`
 
 ### Phase 9 — Dashboard Analytics Realtime (Status: PENDING)
 * Endpoint agregasi metrik penjualan, piutang, mutasi stok, dan laba kotor terfilter rentang tanggal

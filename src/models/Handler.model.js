@@ -24,6 +24,8 @@ import DeliveriesModel from "./Deliveries.model.js";
 import DeliveryItemsModel from "./DeliveryItems.model.js";
 import InvoicesModel from "./Invoices.model.js";
 import InvoiceItemsModel from "./InvoiceItems.model.js";
+import PaymentsModel from "./Payments.model.js";
+import PaymentAllocationsModel from "./PaymentAllocations.model.js";
 
 class Handler {
     constructor(server) {
@@ -77,6 +79,8 @@ class Handler {
         this.deliveryItems = new DeliveryItemsModel(this.server, this.db);
         this.invoices = new InvoicesModel(this.server, this.db);
         this.invoiceItems = new InvoiceItemsModel(this.server, this.db);
+        this.payments = new PaymentsModel(this.server, this.db);
+        this.paymentAllocations = new PaymentAllocationsModel(this.server, this.db);
 
         // Associations
         this.users.table.belongsToMany(this.roles.table, {
@@ -326,6 +330,32 @@ class Handler {
         this.invoiceItems.table.belongsTo(this.products.table, {
             foreignKey: 'product_id',
             as: 'product'
+        });
+
+        // Payment Associations
+        this.payments.table.belongsTo(this.customers.table, {
+            foreignKey: 'customer_id',
+            as: 'customer'
+        });
+        this.payments.table.belongsTo(this.users.table, {
+            foreignKey: 'created_by',
+            as: 'creator'
+        });
+        this.payments.table.hasMany(this.paymentAllocations.table, {
+            foreignKey: 'payment_id',
+            as: 'allocations'
+        });
+        this.paymentAllocations.table.belongsTo(this.payments.table, {
+            foreignKey: 'payment_id',
+            as: 'payment'
+        });
+        this.paymentAllocations.table.belongsTo(this.invoices.table, {
+            foreignKey: 'invoice_id',
+            as: 'invoice'
+        });
+        this.invoices.table.hasMany(this.paymentAllocations.table, {
+            foreignKey: 'invoice_id',
+            as: 'allocations'
         });
 
         return this.db;

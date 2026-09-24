@@ -12,7 +12,8 @@ import {
   QuotationRoute,
   SalesOrderRoute,
   DeliveryRoute,
-  InvoiceRoute
+  InvoiceRoute,
+  PaymentRoute
 } from '#routesPrimaryV1';
 
 class PrimaryHandlerV1 {
@@ -33,6 +34,7 @@ class PrimaryHandlerV1 {
     new SalesOrderRoute(server, endpointPrefix);
     new DeliveryRoute(server, endpointPrefix);
     new InvoiceRoute(server, endpointPrefix);
+    new PaymentRoute(server, endpointPrefix);
   }
 }
 
