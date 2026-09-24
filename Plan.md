@@ -905,11 +905,17 @@ Delivery: DO-001        Delivery: DO-002
 * [x] Frontend Surat Jalan terintegrasi API riil:
   * [x] `/deliveries` (Daftar Pengiriman Penjualan, Armada Kurir, Status POD / Perjalanan, Modal Buat Surat Jalan, Detail Muatan, Tombol "Kirim & Potong Stok" Atomik, Tandai Diterima, Cetak Dokumen Surat Jalan, Hapus & Batch Delete)
 
-### Phase 7 — Penjualan: Daftar Invoice (Status: IN PROGRESS / Frontend Completed)
-* Migrasi tabel: `invoices`, `invoice_items`
-* Backend: Generate invoice dari satu atau beberapa delivery terkonfirmasi, kalkulasi jatuh tempo & tagihan
-* Frontend (Selesai dengan dummy data & 4 kartu KPI):
-  * [x] `/invoices` (Daftar Invoice, Sisa Piutang, Status Overdue / Lunas)
+### Phase 7 — Penjualan: Daftar Invoice (Status: COMPLETED / 100%)
+* [x] Migrasi tabel: `invoices`, `invoice_items`
+* [x] Backend:
+  * Penomoran otomatis format `INV-YYYYMM-XXX`
+  * Relasi transaksi: Invoice → Customer, Delivery Order, Sales Order, dan User Creator
+  * Perhitungan tanggal jatuh tempo otomatis berdasarkan `payment_terms` customer
+  * Import otomatis item produk & harga jual dari Delivery Order / Sales Order
+  * Endpoint CRUD, metrik piutang/overdue, dan batch delete
+* [x] Frontend terintegrasi API riil:
+  * [x] `/invoices` (Daftar Faktur Komersial, 4 Kartu Metrik Piutang Riil, Filter Status, Sorting, Pencarian, Modal Penerbitan Faktur dari DO / Manual, Pratinjau Rincian Tagihan, Cetak Dokumen Faktur Komersial dengan Rekening Bank & Tanda Tangan, Export CSV, Hapus & Batch Delete)
+  * [x] Tombol pintas "Terbitkan Faktur" di halaman `/deliveries`
 
 ### Phase 8 — Penjualan: Daftar Payments (Status: IN PROGRESS / Frontend Completed)
 * Migrasi tabel: `payments`, `payment_allocations`

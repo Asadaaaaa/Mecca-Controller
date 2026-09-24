@@ -11,3 +11,4 @@ export { default as InventoryService } from './Inventory.service.js';
 export { default as QuotationService } from './Quotation.service.js';
 export { default as SalesOrderService } from './SalesOrder.service.js';
 export { default as DeliveryService } from './Delivery.service.js';
+export { default as InvoiceService } from './Invoice.service.js';

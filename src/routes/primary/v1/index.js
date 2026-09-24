@@ -11,3 +11,4 @@ export { default as InventoryRoute } from "./Inventory.route.js";
 export { default as QuotationRoute } from "./Quotation.route.js";
 export { default as SalesOrderRoute } from "./SalesOrder.route.js";
 export { default as DeliveryRoute } from "./Delivery.route.js";
+export { default as InvoiceRoute } from "./Invoice.route.js";

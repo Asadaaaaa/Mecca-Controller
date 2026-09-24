@@ -22,6 +22,8 @@ import SalesOrdersModel from "./SalesOrders.model.js";
 import SalesOrderItemsModel from "./SalesOrderItems.model.js";
 import DeliveriesModel from "./Deliveries.model.js";
 import DeliveryItemsModel from "./DeliveryItems.model.js";
+import InvoicesModel from "./Invoices.model.js";
+import InvoiceItemsModel from "./InvoiceItems.model.js";
 
 class Handler {
     constructor(server) {
@@ -73,6 +75,8 @@ class Handler {
         this.salesOrderItems = new SalesOrderItemsModel(this.server, this.db);
         this.deliveries = new DeliveriesModel(this.server, this.db);
         this.deliveryItems = new DeliveryItemsModel(this.server, this.db);
+        this.invoices = new InvoicesModel(this.server, this.db);
+        this.invoiceItems = new InvoiceItemsModel(this.server, this.db);
 
         // Associations
         this.users.table.belongsToMany(this.roles.table, {
@@ -286,6 +290,40 @@ class Handler {
             as: 'salesOrderItem'
         });
         this.deliveryItems.table.belongsTo(this.products.table, {
+            foreignKey: 'product_id',
+            as: 'product'
+        });
+
+        // Invoice Associations
+        this.invoices.table.belongsTo(this.customers.table, {
+            foreignKey: 'customer_id',
+            as: 'customer'
+        });
+        this.invoices.table.belongsTo(this.deliveries.table, {
+            foreignKey: 'delivery_id',
+            as: 'delivery'
+        });
+        this.invoices.table.belongsTo(this.salesOrders.table, {
+            foreignKey: 'sales_order_id',
+            as: 'salesOrder'
+        });
+        this.invoices.table.belongsTo(this.users.table, {
+            foreignKey: 'created_by',
+            as: 'creator'
+        });
+        this.invoices.table.hasMany(this.invoiceItems.table, {
+            foreignKey: 'invoice_id',
+            as: 'items'
+        });
+        this.invoiceItems.table.belongsTo(this.invoices.table, {
+            foreignKey: 'invoice_id',
+            as: 'invoice'
+        });
+        this.invoiceItems.table.belongsTo(this.deliveries.table, {
+            foreignKey: 'delivery_id',
+            as: 'delivery'
+        });
+        this.invoiceItems.table.belongsTo(this.products.table, {
             foreignKey: 'product_id',
             as: 'product'
         });

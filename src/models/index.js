@@ -21,3 +21,5 @@ export { default as SalesOrdersModel } from "./SalesOrders.model.js";
 export { default as SalesOrderItemsModel } from "./SalesOrderItems.model.js";
 export { default as DeliveriesModel } from "./Deliveries.model.js";
 export { default as DeliveryItemsModel } from "./DeliveryItems.model.js";
+export { default as InvoicesModel } from "./Invoices.model.js";
+export { default as InvoiceItemsModel } from "./InvoiceItems.model.js";

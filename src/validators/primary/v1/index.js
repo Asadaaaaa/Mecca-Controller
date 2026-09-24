@@ -11,3 +11,4 @@ export { default as InventoryValidator } from "./Inventory.validator.js";
 export { default as QuotationValidator } from "./Quotation.validator.js";
 export { default as SalesOrderValidator } from "./SalesOrder.validator.js";
 export { default as DeliveryValidator } from "./Delivery.validator.js";
+export { default as InvoiceValidator } from "./Invoice.validator.js";

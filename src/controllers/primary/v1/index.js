@@ -11,3 +11,4 @@ export { default as InventoryController } from "./Inventory.controller.js";
 export { default as QuotationController } from "./Quotation.controller.js";
 export { default as SalesOrderController } from "./SalesOrder.controller.js";
 export { default as DeliveryController } from "./Delivery.controller.js";
+export { default as InvoiceController } from "./Invoice.controller.js";

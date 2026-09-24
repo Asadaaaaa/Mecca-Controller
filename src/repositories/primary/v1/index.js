@@ -10,3 +10,4 @@ export { default as InventoryRepository } from "./Inventory.repository.js";
 export { default as QuotationRepository } from "./Quotation.repository.js";
 export { default as SalesOrderRepository } from "./SalesOrder.repository.js";
 export { default as DeliveryRepository } from "./Delivery.repository.js";
+export { default as InvoiceRepository } from "./Invoice.repository.js";
