@@ -293,6 +293,23 @@ updated_at          TIMESTAMP
 
 ---
 
+### 3.6 System Settings & Security
+
+#### system_settings
+```text
+id                  BIGINT (PK, Auto Increment)
+key                 VARCHAR(100) (Unique, e.g. security_pin_enabled, security_pin_hash, force_sales_order_enabled)
+value               TEXT
+description         TEXT
+updated_by          BIGINT (FK -> users.id, Nullable)
+created_at          TIMESTAMP
+updated_at          TIMESTAMP
+```
+
+*Catatan: Menyimpan konfigurasi global operasional sistem seperti status aktivasi PIN otorisasi (`security_pin_enabled`), hash PIN 6 digit (`security_pin_hash`), dan kebijakan pemesanan stok minus / force sales order (`force_sales_order_enabled`).*
+
+---
+
 ## 4. INVENTORY DATABASE
 
 ### 4.1 Warehouse Stock
@@ -412,6 +429,21 @@ total               DECIMAL(15, 2)
 * Sales Order dapat dibuat dari Quotation yang berstatus `APPROVED` ataupun dibuat langsung tanpa Quotation.
 * **Sales Order TIDAK memotong stok gudang.** Pemotongan stok terjadi saat Delivery dikonfirmasi.
 
+### 6.3 Kebijakan Pemesanan Stok & Force Create Sales Order
+* **Pemeriksaan Ketersediaan Stok**:
+  * Saat Sales Order dibuat, sistem membandingkan kuantitas yang diminta dengan stok tersedia (`available_stock = physical_stock - reserved_stock_active_so`).
+* **Alur Validasi & Bypass Otorisasi PIN**:
+  * **Kondisi 1 — Stok Cukup**: Sales Order langsung dibuat secara normal tanpa memerlukan otorisasi PIN.
+  * **Kondisi 2 — Stok Kurang & Toggle Force Create SO Nonaktif**: Sistem menolak pembuatan Sales Order dan mengembalikan pesan error validasi bahwa stok tidak mencukupi serta menyarankan penyesuaian kuantitas.
+  * **Kondisi 3 — Stok Kurang & Toggle Force Create SO Aktif**:
+    1. Frontend Dashboard menampilkan modal dialog otorisasi: *"Stok tidak mencukupi! Masukkan PIN 6 Digit untuk melanjutkan pembuatan Sales Order (Paksa Buat / Backorder)"*.
+    2. Modal menyajikan rincian item dengan stok kurang (stok fisik, terpesan, tersedia, dan jumlah yang diminta).
+    3. Pengguna memasukkan PIN 6 digit angka yang valid.
+    4. Request dikirim ke backend dengan payload tambahan `{ force_override: true, pin: "xxxxxx" }`.
+    5. Backend memvalidasi status toggle `force_sales_order_enabled` dan memverifikasi hash PIN. Jika valid, Sales Order berhasil dibuat dan tercatat audit log bahwa pesanan ini dibuat melalui otorisasi khusus (Force Create / Backorder).
+* **Prinsip Keamanan Inventaris**:
+  * Sales Order bersifat komitmen pesanan komersial (*order commitment*) dan **TIDAK** memotong stok fisik gudang. Oleh karena itu, Sales Order dengan stok kurang aman dibuat tanpa menimbulkan stok minus pada saldo fisik.
+
 ---
 
 ## 7. SALES DELIVERY (SURAT JALAN)
@@ -451,6 +483,17 @@ quantity            DECIMAL(12, 2)
   3. Catat riwayat di `stock_movements` dengan type `SALES_DELIVERY`.
   4. Perbarui status Delivery menjadi `CONFIRMED`.
   5. Perbarui status Sales Order (`PARTIALLY_DELIVERED` atau `FULLY_DELIVERED`).
+
+### 7.3 Restriksi Mutlak Pengiriman (Zero Negative Stock Guardrail)
+* **Prinsip Utama: Mencegah Terjadinya Stok Minus**:
+  * Pengurangan kuantitas stok fisik riil di gudang (`warehouse_stocks.quantity`) terjadi **eksklusif pada saat pengiriman (Delivery)**.
+  * Meskipun Sales Order diizinkan dibuat dengan status backorder (melebihi stok yang ada melalui otorisasi PIN), proses **Pengiriman (Delivery / Surat Jalan) DIBATASI KETAT TANPA TOLERANSI (RESTRICTED)**.
+* **Aturan Restriksi Mutlak Pengiriman**:
+  1. **Validasi Kuantitas Kirim $\le$ Saldo Stok Fisik Riil**: Sistem tidak memperbolehkan penerbitan surat jalan jika kuantitas barang yang akan dikirim melebihi saldo fisik riil di gudang (`ship_quantity <= physical_stock`).
+  2. **Tanpa Opsi Bypass PIN pada Pengiriman**: Tidak ada opsi PIN bypass untuk pengiriman barang yang fisiknya tidak ada di gudang. Hal ini menjamin bahwa saldo stok di database tidak pernah bernilai negatif (mines).
+  3. **Mekanisme Operasional Pemenuhan Pesanan**:
+     * **Partial Delivery (Kirim Bertahap)**: Jika stok hanya tersedia sebagian, buat Surat Jalan hanya untuk kuantitas yang tersedia.
+     * **Menunggu Restok / Penerimaan Barang**: Untuk sisa barang yang stoknya belum ada di gudang, pengiriman ditahan hingga bagian gudang melakukan transaksi Penerimaan Stok (*Stock In* / Penyesuaian). Setelah stok fisik tercatat bertambah, barulah Surat Jalan berikutnya dapat diterbitkan.
 
 ---
 
@@ -574,6 +617,10 @@ Backend menyajikan endpoint REST API terstandarisasi dengan prefix versioning `/
 * `GET /primary/v1/warehouses` — Daftar gudang (Settings: Daftar Warehouse)
 * `POST /primary/v1/warehouses`, `GET /:id`, `PUT /:id`, `DELETE /:id`
 * `GET /primary/v1/roles` & `GET /primary/v1/permissions` — Master Role & Hak Akses
+* `GET /primary/v1/settings/system` — Ambil konfigurasi sistem (status keamanan PIN, status toggle Force SO)
+* `PUT /primary/v1/settings/system/pin` — Atur/ubah PIN 6 digit angka dan toggle status aktif PIN
+* `PUT /primary/v1/settings/system/force-sales-order` — Atur toggle "Force Create Sales Order" (memerlukan verifikasi PIN jika PIN aktif)
+* `POST /primary/v1/settings/system/verify-pin` — Verifikasi keabsahan PIN 6 digit untuk otorisasi tindakan sensitif
 
 #### Customers
 * `GET /primary/v1/customers` — Daftar Customer
@@ -597,8 +644,8 @@ Backend menyajikan endpoint REST API terstandarisasi dengan prefix versioning `/
 
 #### Penjualan (Sales)
 * **Penawaran (Quotations)**: `GET /primary/v1/quotations`, `POST`, `GET /:id`, `PUT /:id`, `POST /:id/approve`, `POST /:id/reject`, `POST /:id/convert-to-order`
-* **Pesanan (Sales Orders)**: `GET /primary/v1/sales-orders`, `POST`, `GET /:id`, `PUT /:id`, `POST /:id/confirm`
-* **Surat Jalan (Deliveries)**: `GET /primary/v1/deliveries`, `POST`, `GET /:id`, `POST /:id/confirm` (eksekusi pemotongan stok gudang)
+* **Pesanan (Sales Orders)**: `GET /primary/v1/sales-orders`, `POST` (mendukung `force_override: true` & `pin` saat stok kurang), `GET /:id`, `PUT /:id`, `POST /:id/confirm`
+* **Surat Jalan (Deliveries)**: `GET /primary/v1/deliveries` (menolak jika kuantitas kirim > stok fisik riil), `POST`, `GET /:id`, `POST /:id/confirm` (eksekusi pemotongan stok gudang riil, restriksi mutlak tanpa minus)
 * **Daftar Invoice**: `GET /primary/v1/invoices`, `POST`, `GET /:id`, `POST /:id/cancel`
 * **Daftar Payments**: `GET /primary/v1/payments`, `POST`, `GET /:id`, `POST /:id/allocate`
 
@@ -783,7 +830,8 @@ dashboard/
 | `/products` | Modul Produk & Kategori | Sub modul: Daftar Produk (`/products`), Daftar Kategori (`/products/categories`) |
 | `/inventory` | Modul Inventaris dan Stok | Sub modul: Daftar Stok (`/inventory`), Stok Opname (`/inventory/opname`), Stok Terbuang (`/inventory/waste`) |
 | `/sales-orders` | Modul Penjualan | Sub modul: Daftar Penawaran Penjualan (`/quotations`), Daftar Pesanan Penjualan (`/sales-orders`), Daftar Pengiriman Penjualan (`/deliveries`), Daftar Invoice (`/invoices`), Daftar Payments (`/payments`) |
-| `/settings` | Modul Settings | Sub modul: Daftar Users (`/settings/users`), Daftar Warehouse (`/settings/warehouses`) |
+| `/settings` | Modul Settings | Sub modul: Daftar Users (`/settings/users`), Role & Hak Akses (`/settings/roles`), Daftar Warehouse (`/settings/warehouses`), Pengaturan Sistem (`/settings/system`) |
+| `/settings/system` | Pengaturan Sistem & Keamanan | Toggle Keamanan PIN, Buat/Ubah PIN 6-digit angka, Toggle Force Create Sales Order saat stok kurang |
 
 > [!IMPORTANT]
 > **Route Protection & Auto-Redirect Policy:**
@@ -940,6 +988,16 @@ Delivery: DO-001        Delivery: DO-002
 * [x] Validasi payload Ajv ketat & standarisasi ResponsePreset sukses/error
 * [x] Uji coba End-to-End siklus bisnis penuh dari Login $\rightarrow$ Customer/Warehouse/Product $\rightarrow$ Stok In/Adjustment $\rightarrow$ Quotation $\rightarrow$ Sales Order $\rightarrow$ Delivery (Potong Stok & Mutasi) $\rightarrow$ Invoice $\rightarrow$ Payment (Auto Lunas) $\rightarrow$ Realtime Dashboard Analytics (100% Pass)
 
+### Phase 11 — Pengaturan Sistem, Keamanan PIN & Kebijakan Pemesanan Stok (Status: PLANNED / 0%)
+- [ ] Database: Migration tabel `system_settings` (`key`, `value`, `description`, `updated_by`) & seeder konfigurasi awal
+- [ ] Backend: Model Sequelize `SystemSettings.model.js`, `SystemSetting.route.js`, `SystemSetting.controller.js`, `SystemSetting.service.js`, `SystemSetting.repository.js`, `SystemSetting.validator.js`
+- [ ] Backend: Endpoint manajemen PIN 6 digit (`PUT /primary/v1/settings/system/pin`), verifikasi PIN (`POST /primary/v1/settings/system/verify-pin`), dan toggle Force Sales Order (`PUT /primary/v1/settings/system/force-sales-order`)
+- [ ] Backend (Sales Order): Pengecekan stok cerdas dengan otorisasi PIN 6 digit pada `POST /primary/v1/sales-orders` (parameter `force_override: true` dan `pin`)
+- [ ] Backend (Delivery): Restriksi mutlak pengiriman barang (`createDelivery` dan `confirmDelivery`), menolak jika `quantity > physical_stock` tanpa opsi bypass untuk mencegah stok minus
+- [ ] Frontend Modul Settings: Sub modul `/settings/system` (Pengaturan Sistem) dengan card Keamanan PIN (Toggle status PIN, modal buat/ubah 6 digit PIN) dan card Kebijakan Pesanan (Toggle Force Create Sales Order yang dilindungi PIN)
+- [ ] Frontend Modul Sales Order: Modal dialog otorisasi PIN 6 digit yang muncul otomatis saat pengguna menekan tombol "Buat Sales Order" namun stok produk tidak mencukupi
+- [ ] Frontend Modul Delivery: Tampilan info ketersediaan stok fisik riil pada dialog pembuatan Surat Jalan dan restriksi input kuantitas maksimal kirim sesuai stok fisik
+
 ---
 
 ## 19. PRIORITY MATRIX
@@ -979,6 +1037,8 @@ Delivery: DO-001        Delivery: DO-002
    Melalui tabel penghubung `payment_allocations`, satu pembayaran transfer pelanggan dapat melunasi beberapa invoice sekaligus, dan sebaliknya satu invoice berskala besar dapat dicicil melalui beberapa kali pembayaran secara transparan.
 4. **Desain Database Siap Multi-Warehouse Sejak Hari Pertama**:
    Meskipun pada fase awal perusahaan hanya mengoperasikan satu warehouse utama, seluruh tabel transaksi dan relasi stok telah mengaitkan `warehouse_id`. Ketika ekspansi gudang dilakukan, struktur fundamental database tidak perlu diubah ataupun dimigrasi ulang.
+5. **Pemisahan Tegas antara Force Sales Order vs Strict Delivery Restriction**:
+   Sales Order adalah dokumen perikatan komersial pemesanan, sehingga dapat dipaksa terbit (backorder) via otorisasi PIN 6-digit oleh pihak berwenang ketika stok tidak cukup. Sebaliknya, Pengiriman (Delivery / Surat Jalan) adalah dokumen operasional logistik yang memotong saldo stok fisik gudang secara riil. Pengiriman **TIDAK BISA** dipaksa jika stok fisik tidak mencukupi (tidak ada bypass PIN), guna menjamin integritas inventaris agar saldo stok fisik tidak pernah bernilai negatif (mines).
 
 ---
 
@@ -1084,3 +1144,16 @@ Delivery: DO-001        Delivery: DO-002
 - [x] **Automated E2E QA Test Script**: Eksekusi siklus ERP penuh tanpa celah (Login $\rightarrow$ Customer $\rightarrow$ Warehouse $\rightarrow$ Product $\rightarrow$ Stock Adjustment $\rightarrow$ Quotation Buat/Setujui/Konversi $\rightarrow$ Sales Order Konfirmasi $\rightarrow$ Surat Jalan Buat/Kirim Potong Stok Atomik/Diterima $\rightarrow$ Faktur Penjualan Terbit $\rightarrow$ Pembayaran Kas/Bank Alokasi Multi-Faktur $\rightarrow$ Auto-Pelunasan Faktur $\rightarrow$ Realtime Dashboard Metrics/Transactions/Trend) lolos 100%
 
 
+
+### 21.12 Modul Pengaturan Sistem (PIN Security & Force Sales Order) & Strict Delivery Restrict (Status: DALAM PERENCANAAN / 0%)
+- [ ] **Database**: Migration tabel `system_settings` (`key`, `value`, `description`, `updated_by`) & seeder konfigurasi awal
+- [ ] **Database**: Seeder default config (`security_pin_enabled: false`, `force_sales_order_enabled: false`)
+- [ ] **Controller**: Model Sequelize `SystemSettings.model.js` & integrasi relasi di `Handler.model.js`
+- [ ] **Controller**: Route `SystemSetting.route.js`, controller `SystemSetting.controller.js`, service `SystemSetting.service.js`, repository `SystemSetting.repository.js`, validator Ajv `SystemSetting.validator.js`
+- [ ] **Controller**: Endpoint `GET /primary/v1/settings/system`, `PUT /primary/v1/settings/system/pin`, `PUT /primary/v1/settings/system/force-sales-order`, `POST /primary/v1/settings/system/verify-pin`
+- [ ] **Controller (Sales Order)**: Validasi stok pada `SalesOrder.service.js` dengan dukungan `force_override: true` dan verifikasi hash PIN otorisasi
+- [ ] **Controller (Delivery)**: Validasi mutlak pada `Delivery.service.js` (`createDelivery` & `confirmDelivery`) memblokir pengiriman jika kuantitas kirim > stok fisik riil
+- [ ] **Dashboard (UI Settings)**: Halaman Pengaturan Sistem `/settings/system` dengan kartu Keamanan PIN (Toggle + Modal Setup PIN 6 Digit) dan kartu Kebijakan Penjualan (Toggle Force Create SO dengan konfirmasi PIN)
+- [ ] **Dashboard (UI Sales Order)**: Modal Otorisasi PIN 6 Digit pada formulir Sales Order saat produk yang dipilih melebihi stok yang tersedia
+- [ ] **Dashboard (UI Delivery)**: Tampilan info stok fisik riil di dialog pembuatan Surat Jalan dan pembatasan maksimal input kuantitas kirim sesuai stok fisik yang tersedia
+- [ ] **Dashboard (Sidebar & Routing)**: Penambahan menu "Pengaturan Sistem" pada sidebar menu Settings dan route `/settings/system` di `App.tsx`
