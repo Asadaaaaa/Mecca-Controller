@@ -52,10 +52,10 @@ class SystemSettingService {
         const isCurrentlyEnabled = map['security_pin_enabled'] === 'true';
         const currentHash = map['security_pin_hash'];
 
-        // If PIN is already enabled and a new PIN is being set or disabled, require current_pin verification
-        if (isCurrentlyEnabled && currentHash) {
+        // If a new PIN is being set and PIN is already configured and active, require current_pin verification
+        if (data.pin && isCurrentlyEnabled && currentHash) {
             if (!data.current_pin) {
-                return { error: 'CURRENT_PIN_REQUIRED', message: 'PIN saat ini wajib dimasukkan untuk melakukan perubahan.' };
+                return { error: 'CURRENT_PIN_REQUIRED', message: 'PIN saat ini wajib dimasukkan untuk mengubah PIN.' };
             }
             if (this.hashPin(data.current_pin) !== currentHash) {
                 return { error: 'INVALID_CURRENT_PIN', message: 'PIN saat ini salah.' };
@@ -90,10 +90,11 @@ class SystemSettingService {
         const pinEnabled = map['security_pin_enabled'] === 'true';
         const currentHash = map['security_pin_hash'];
 
-        // If PIN security is enabled, require PIN verification to toggle force SO
-        if (pinEnabled && currentHash) {
+        // Require PIN verification only when ENABLING force SO and PIN security is active
+        // Turning OFF (mematikan) does NOT require PIN
+        if (data.enabled && pinEnabled && currentHash) {
             if (!data.pin) {
-                return { error: 'PIN_REQUIRED', message: 'PIN 6 digit wajib dimasukkan untuk mengubah pengaturan ini.' };
+                return { error: 'PIN_REQUIRED', message: 'PIN 6 digit wajib dimasukkan untuk mengaktifkan pengaturan ini.' };
             }
             if (this.hashPin(data.pin) !== currentHash) {
                 return { error: 'INVALID_PIN', message: 'PIN tidak valid.' };
