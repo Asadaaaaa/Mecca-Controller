@@ -25,12 +25,12 @@ class UserRepository {
     async getUserDataByIdentity(identity) {
         if (!this.usersTable) {
             // Fallback for mock if DB_ENABLE is false
-            if (identity === 'admin' || identity === 'admin@mecca.com') {
+            if (identity === 'admin' || identity === 'admin@mecca.co.id') {
                 return {
                     id: 1,
                     uuid: 'a0000000-0000-0000-0000-000000000001',
                     name: 'Administrator',
-                    email: 'admin@mecca.com',
+                    email: 'admin@mecca.co.id',
                     username: 'admin',
                     password: '178ced3dd9e088c3b7d257d2c2df02123cd5de2eea0bacfbb84e845e6796ee30', // sha256('admin123-meccaSalt2026')
                     status: 'active',
@@ -75,7 +75,7 @@ class UserRepository {
                         id: 1,
                         uuid: 'a0000000-0000-0000-0000-000000000001',
                         name: 'Administrator',
-                        email: 'admin@mecca.com',
+                        email: 'admin@mecca.co.id',
                         username: 'admin',
                         status: 'active',
                         roles: [{ id: 1, name: 'superadmin', description: 'Super Administrator' }],
@@ -170,7 +170,7 @@ class UserRepository {
                     id: 1,
                     uuid: 'a0000000-0000-0000-0000-000000000001',
                     name: 'Administrator',
-                    email: 'admin@mecca.com',
+                    email: 'admin@mecca.co.id',
                     username: 'admin',
                     status: 'active',
                     roles: [{ id: 1, name: 'superadmin', description: 'Super Administrator' }]
