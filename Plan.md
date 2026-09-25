@@ -441,6 +441,12 @@ total               DECIMAL(15, 2)
     3. Pengguna memasukkan PIN 6 digit angka yang valid.
     4. Request dikirim ke backend dengan payload tambahan `{ force_override: true, pin: "xxxxxx" }`.
     5. Backend memvalidasi status toggle `force_sales_order_enabled` dan memverifikasi hash PIN. Jika valid, Sales Order berhasil dibuat dan tercatat audit log bahwa pesanan ini dibuat melalui otorisasi khusus (Force Create / Backorder).
+* **Aturan Siklus & Dependensi Keamanan Pengaturan**:
+  * **Dependensi Mutlak Force Create SO**: Fitur *Force Create Sales Order* hanya dapat diaktifkan jika *Keamanan PIN Otorisasi* dalam kondisi **AKTIF**. Jika Keamanan PIN dimatikan, toggle Force Create SO otomatis ikut nonaktif.
+  * **Transisi Toggle Keamanan PIN**:
+    * Mematikan Keamanan PIN (`ON` → `OFF`): Pengguna **wajib memasukkan PIN lama** yang sedang aktif sebagai konfirmasi otorisasi sebelum sistem menghapus/menonaktifkan proteksi.
+    * Menyalakan kembali Keamanan PIN (`OFF` → `ON`): Pengguna **wajib mendaftarkan PIN 6 digit baru**.
+    * Mematikan Toggle Force Create SO (`ON` → `OFF`): Dapat dilakukan langsung tanpa perlu memasukkan PIN kembali.
 * **Prinsip Keamanan Inventaris**:
   * Sales Order bersifat komitmen pesanan komersial (*order commitment*) dan **TIDAK** memotong stok fisik gudang. Oleh karena itu, Sales Order dengan stok kurang aman dibuat tanpa menimbulkan stok minus pada saldo fisik.
 
@@ -494,6 +500,24 @@ quantity            DECIMAL(12, 2)
   3. **Mekanisme Operasional Pemenuhan Pesanan**:
      * **Partial Delivery (Kirim Bertahap)**: Jika stok hanya tersedia sebagian, buat Surat Jalan hanya untuk kuantitas yang tersedia.
      * **Menunggu Restok / Penerimaan Barang**: Untuk sisa barang yang stoknya belum ada di gudang, pengiriman ditahan hingga bagian gudang melakukan transaksi Penerimaan Stok (*Stock In* / Penyesuaian). Setelah stok fisik tercatat bertambah, barulah Surat Jalan berikutnya dapat diterbitkan.
+
+### 7.4 Cetak Dokumen Surat Jalan (Dual Format: PDF & Dot Matrix)
+Untuk mengakomodasi fleksibilitas operasional pergudangan dan logistik distribusi, pencetakan dokumen Surat Jalan (Delivery Order / DO) pada dashboard mendukung 2 format:
+
+1. **Format PDF (Standar A4)**:
+   * **Tipografi & Desain Formal**: Menggunakan layout dokumen portrait A4 standar dengan tipografi sans-serif proporsional dan garis batas rapi.
+   * **Header Identitas Perusahaan**: Memuat identitas PT Mecca Distribusi Solusindo, No. Surat Jalan, No. Referensi Sales Order, tanggal pengiriman, data pelanggan & alamat tujuan, gudang asal pengiriman, serta informasi ekspedisi/kurir dan nomor polisi kendaraan.
+   * **Tabel Rincian Muatan**: Menyajikan rincian item barang (No, Kode Barang, Deskripsi Barang, Kuantitas, Satuan `UNIT`), total kuantitas muatan, dan catatan pengiriman.
+   * **Kolom Tanda Tangan 3 Pihak**: Menyiapkan 3 kolom tanda tangan resmi: *Diserahkan Oleh (Petugas Gudang)*, *Pengemudi / Kurir*, dan *Diterima Dengan Baik (Penerima / Cap Toko)*.
+   * **Penanda Tembusan Rangkap 3**: Penanda warna lembar tembusan operasional: Lembar 1 Putih (Pelanggan), Lembar 2 Merah (Gudang), dan Lembar 3 Kuning (Finance).
+   * **Cetak Terisolasi (Clean Printing)**: Pencetakan dijalankan melalui hidden iframe independen sehingga output cetak bersih tanpa elemen backdrop modal atau tombol UI.
+
+2. **Format Dot Matrix (Continuous Form / Kertas Rangkap 80-Kolom)**:
+   * **Monospace Grid 80 Karakter**: Diformat khusus untuk printer jarum impact (*dot matrix*, e.g. Epson LX-300 / LX-310 / LQ series) dengan font monospace fixed-width (`Courier New`) selebar 80 kolom agar teks presisi dan tidak terpotong.
+   * **Garis Karakter ASCII Murni**: Menggunakan garis pembatas teks karakter ASCII (`====` dan `----`) sehingga pencetakan berlangsung instan, tajam, dan hemat pita (*ribbon-friendly*).
+   * **Pratinjau Kertas Continuous Form**: Dashboard menyajikan simulasi kertas continuous form hijau klasik dengan blok `<pre>` yang rapi dan mudah dibaca.
+   * **Tombol "Salin Raw ASCII"**: Fitur 1-klik untuk menyalin seluruh string teks mentah 80 kolom ke clipboard guna kemudahan direct print melalui command line spooler (LPT/COM), raw print utility, maupun teks editor.
+   * **Konfigurasi Cetak Continuous Form**: Cetak dokumen langsung diatur dengan CSS `@page { size: 210mm 140mm; }` agar ramah kertas continuous form standar (9.5 × 5.5 inci / half-letter).
 
 ---
 
@@ -783,7 +807,7 @@ dashboard/
 │   │   ├── ui/                    # Komponen primitif (button, card, dialog, input, sidebar, etc.)
 │   │   ├── app-sidebar.tsx        # Navigasi sidebar modular ERP Mecca (collapsible & resizable)
 │   │   ├── nav-main.tsx           # Menu navigasi modul utama & sub modul collapsible
-│   │   ├── nav-user.tsx           # User profile avatar, role badge & functional logout
+│   │   ├── nav-user.tsx           # User profile popover dengan menu cepat "Pengaturan Sistem" & "Logout"
 │   │   ├── team-switcher.tsx      # Identitas bisnis (Mecca)
 │   │   ├── theme-provider.tsx     # Pengatur tema Dark/Light
 │   │   ├── login-form.tsx         # Komponen form login terintegrasi API
@@ -825,13 +849,13 @@ dashboard/
 | Path Route | Deskripsi Halaman | Fitur Utama |
 | :--- | :--- | :--- |
 | `/login` | Autentikasi Pengguna | Form login identity & password, validasi & auto-redirect |
-| `/` atau `/dashboard` | Dashboard Overview | Metrik Utama (Total Penjualan, Penjualan Belum Dibayar, Penjualan Terbayar, Transaksi), Date Range Picker interaktif, Analisis Rasio Pembayaran, Transaksi Terkini |
+| `/` atau `/dashboard` | Dashboard Overview | Header minimalis "Overview", Metrik Utama (Total Penjualan, Penjualan Belum Dibayar, Penjualan Terbayar, Transaksi), Date Range Picker interaktif, Analisis Rasio Pembayaran, Transaksi Terkini |
 | `/customers` | Modul Customers | Sub modul: Daftar Customer (`/customers`) |
 | `/products` | Modul Produk & Kategori | Sub modul: Daftar Produk (`/products`), Daftar Kategori (`/products/categories`) |
 | `/inventory` | Modul Inventaris dan Stok | Sub modul: Daftar Stok (`/inventory`), Stok Opname (`/inventory/opname`), Stok Terbuang (`/inventory/waste`) |
 | `/sales-orders` | Modul Penjualan | Sub modul: Daftar Penawaran Penjualan (`/quotations`), Daftar Pesanan Penjualan (`/sales-orders`), Daftar Pengiriman Penjualan (`/deliveries`), Daftar Invoice (`/invoices`), Daftar Payments (`/payments`) |
 | `/settings` | Modul Settings | Sub modul: Daftar Users (`/settings/users`), Role & Hak Akses (`/settings/roles`), Daftar Warehouse (`/settings/warehouses`), Pengaturan Sistem (`/settings/system`) |
-| `/settings/system` | Pengaturan Sistem & Keamanan | Toggle Keamanan PIN, Buat/Ubah PIN 6-digit angka, Toggle Force Create Sales Order saat stok kurang |
+| `/settings/system` | Pengaturan Sistem & Keamanan | Kartu ringkas bersebelahan: Keamanan PIN (Toggle dengan validasi PIN lama saat OFF, setup PIN baru saat ON), Kebijakan Force Create SO (terikat dependensi status PIN, matikan tanpa PIN) |
 
 > [!IMPORTANT]
 > **Route Protection & Auto-Redirect Policy:**
@@ -951,7 +975,7 @@ Delivery: DO-001        Delivery: DO-002
 * [x] Migrasi tabel: `deliveries`, `delivery_items`
 * [x] Backend: Alur Partial Delivery, Validasi Saldo Stok Gudang, Eksekusi Pemotongan Stok Atomik di Database Transaction & Riwayat `stock_movements` (tipe `SALES_DELIVERY`), Update Otomatis Status Sales Order (`Proses Kirim` / `Selesai Dikirim`)
 * [x] Frontend Surat Jalan terintegrasi API riil:
-  * [x] `/deliveries` (Daftar Pengiriman Penjualan, Armada Kurir, Status POD / Perjalanan, Modal Buat Surat Jalan, Detail Muatan, Tombol "Kirim & Potong Stok" Atomik, Tandai Diterima, Cetak Dokumen Surat Jalan, Hapus & Batch Delete)
+  * [x] `/deliveries` (Daftar Pengiriman Penjualan, Armada Kurir, Status POD / Perjalanan, Modal Buat Surat Jalan, Detail Muatan, Tombol "Kirim & Potong Stok" Atomik, Tandai Diterima, Opsi Cetak Dokumen Ganda [PDF Standar A4 & Dot Matrix Continuous Form 80-Kolom + Salin Raw ASCII], Hapus & Batch Delete)
 
 ### Phase 7 — Penjualan: Daftar Invoice (Status: COMPLETED / 100%)
 * [x] Migrasi tabel: `invoices`, `invoice_items`
@@ -994,9 +1018,10 @@ Delivery: DO-001        Delivery: DO-002
 - [x] Backend: Endpoint manajemen PIN 6 digit (`PUT /primary/v1/settings/system/pin`), verifikasi PIN (`POST /primary/v1/settings/system/verify-pin`), dan toggle Force Sales Order (`PUT /primary/v1/settings/system/force-sales-order`)
 - [x] Backend (Sales Order): Pengecekan stok cerdas dengan otorisasi PIN 6 digit pada `POST /primary/v1/sales-orders` (parameter `force_override: true` dan `pin`)
 - [x] Backend (Delivery): Restriksi mutlak pengiriman barang (`createDelivery` dan `confirmDelivery`), menolak jika `quantity > physical_stock` tanpa opsi bypass untuk mencegah stok minus
-- [x] Frontend Modul Settings: Sub modul `/settings/system` (Pengaturan Sistem) dengan card Keamanan PIN (Toggle status PIN, modal buat/ubah 6 digit PIN) dan card Kebijakan Pesanan (Toggle Force Create Sales Order yang dilindungi PIN)
+- [x] Frontend Modul Settings: Sub modul `/settings/system` dengan tampilan kartu ringkas berdampingan, aturan Keamanan PIN (masukkan PIN lama untuk mematikan, daftarkan PIN baru untuk menyalakan kembali), dan proteksi dependensi Force Create Sales Order (wajib PIN aktif, matikan tanpa PIN)
 - [x] Frontend Modul Sales Order: Modal dialog otorisasi PIN 6 digit yang muncul otomatis saat pengguna menekan tombol "Buat Sales Order" namun stok produk tidak mencukupi
 - [x] Frontend Modul Delivery: Tampilan info ketersediaan stok fisik riil pada dialog pembuatan Surat Jalan dan restriksi input kuantitas maksimal kirim sesuai stok fisik
+- [x] Frontend Modul Operasional (UI Standardization): Penyeragaman desain kartu KPI Overview di seluruh 9 modul operasional dan menu navigasi cepat "Pengaturan Sistem" pada profil akun sidebar (`nav-user.tsx`)
 
 ---
 
@@ -1112,7 +1137,7 @@ Delivery: DO-001        Delivery: DO-002
 - [x] **Controller**: Model Sequelize `Deliveries`, `DeliveryItems`
 - [x] **Controller**: Endpoint Delivery CRUD (`DO-YYYY-XXXXXX`)
 - [x] **Controller**: Endpoint Delivery Confirm (`POST /primary/v1/deliveries/:id/confirm`) dengan transaksi atomik pemotongan `warehouse_stocks` & insert `stock_movements` (type `SALES_DELIVERY`)
-- [x] **Dashboard (UI)**: Halaman `/deliveries` (Daftar pengiriman, ekspedisi/kurir, status POD, 4 KPI)
+- [x] **Dashboard (UI)**: Halaman `/deliveries` (Daftar pengiriman, ekspedisi/kurir, status POD, 4 KPI, Modal Opsi Cetak Dokumen Ganda: PDF Standar A4 dan Dot Matrix Continuous Form 80-Kolom + Salin Raw ASCII)
 - [x] **Dashboard (Integration)**: Modal buat Surat Jalan dari Sales Order, tombol Konfirmasi Pengiriman + koneksi API real
 
 ### 21.8 Modul Penjualan: Faktur Penjualan (Invoice) (Status: SELESAI / 100%)
@@ -1153,7 +1178,8 @@ Delivery: DO-001        Delivery: DO-002
 - [x] **Controller**: Endpoint `GET /primary/v1/settings/system`, `PUT /primary/v1/settings/system/pin`, `PUT /primary/v1/settings/system/force-sales-order`, `POST /primary/v1/settings/system/verify-pin`
 - [x] **Controller (Sales Order)**: Validasi stok pada `SalesOrder.service.js` dengan dukungan `force_override: true` dan verifikasi hash PIN otorisasi
 - [x] **Controller (Delivery)**: Validasi mutlak pada `Delivery.service.js` (`createDelivery` & `confirmDelivery`) memblokir pengiriman jika kuantitas kirim > stok fisik riil
-- [x] **Dashboard (UI Settings)**: Halaman Pengaturan Sistem `/settings/system` dengan kartu Keamanan PIN (Toggle + Modal Setup PIN 6 Digit) dan kartu Kebijakan Penjualan (Toggle Force Create SO dengan konfirmasi PIN)
+- [x] **Dashboard (UI Settings)**: Halaman Pengaturan Sistem `/settings/system` dengan kartu ringkas berdampingan: Keamanan PIN (Toggle dengan verifikasi PIN lama saat dinonaktifkan, setup PIN baru saat diaktifkan kembali) dan Kebijakan Pesanan (Toggle Force Create SO dengan dependensi PIN aktif, matikan tanpa PIN)
 - [x] **Dashboard (UI Sales Order)**: Modal Otorisasi PIN 6 Digit pada formulir Sales Order saat produk yang dipilih melebihi stok yang tersedia
 - [x] **Dashboard (UI Delivery)**: Tampilan info stok fisik riil di dialog pembuatan Surat Jalan dan pembatasan maksimal input kuantitas kirim sesuai stok fisik yang tersedia
-- [x] **Dashboard (Sidebar & Routing)**: Penambahan menu "Pengaturan Sistem" pada sidebar menu Settings dan route `/settings/system` di `App.tsx`
+- [x] **Dashboard (Sidebar & Routing)**: Penambahan menu "Pengaturan Sistem" pada sidebar menu Settings, menu cepat profil user di sidebar bawah (`nav-user.tsx`), dan route `/settings/system` di `App.tsx`
+- [x] **Dashboard (UI Standardization)**: Penyeragaman visual kartu KPI Overview di seluruh 9 modul operasional dan penyederhanaan judul overview menjadi "Overview"
