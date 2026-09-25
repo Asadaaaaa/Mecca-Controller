@@ -51,8 +51,21 @@ class SystemSettingService {
         const map = await this.settingRepo.getSettingsMap();
         const isCurrentlyEnabled = map['security_pin_enabled'] === 'true';
         const currentHash = map['security_pin_hash'];
+        const userId = user?.id || null;
 
-        // If a new PIN is being set and PIN is already configured and active, require current_pin verification
+        // When turning OFF: user MUST enter the current PIN
+        if (data.enabled === false && isCurrentlyEnabled && currentHash) {
+            if (!data.current_pin) {
+                return { error: 'CURRENT_PIN_REQUIRED', message: 'PIN saat ini wajib dimasukkan untuk mematikan Keamanan PIN.' };
+            }
+            if (this.hashPin(data.current_pin) !== currentHash) {
+                return { error: 'INVALID_CURRENT_PIN', message: 'PIN yang dimasukkan salah.' };
+            }
+            // Auto turn off Force SO when PIN security is disabled
+            await this.settingRepo.upsertSetting('force_sales_order_enabled', 'false', 'Izinkan paksa buat Sales Order walau stok kurang dengan otorisasi PIN', userId);
+        }
+
+        // When changing PIN while active: require current PIN verification
         if (data.pin && isCurrentlyEnabled && currentHash) {
             if (!data.current_pin) {
                 return { error: 'CURRENT_PIN_REQUIRED', message: 'PIN saat ini wajib dimasukkan untuk mengubah PIN.' };
@@ -61,8 +74,6 @@ class SystemSettingService {
                 return { error: 'INVALID_CURRENT_PIN', message: 'PIN saat ini salah.' };
             }
         }
-
-        const userId = user?.id || null;
 
         // If new PIN is provided
         if (data.pin) {
@@ -90,9 +101,11 @@ class SystemSettingService {
         const pinEnabled = map['security_pin_enabled'] === 'true';
         const currentHash = map['security_pin_hash'];
 
-        // Require PIN verification only when ENABLING force SO and PIN security is active
-        // Turning OFF (mematikan) does NOT require PIN
-        if (data.enabled && pinEnabled && currentHash) {
+        // Require Keamanan PIN Otorisasi to be active, and require valid PIN to enable Force SO
+        if (data.enabled) {
+            if (!pinEnabled) {
+                return { error: 'PIN_SECURITY_REQUIRED', message: 'Keamanan PIN Otorisasi harus dalam keadaan aktif untuk mengaktifkan Force Create Sales Order.' };
+            }
             if (!data.pin) {
                 return { error: 'PIN_REQUIRED', message: 'PIN 6 digit wajib dimasukkan untuk mengaktifkan pengaturan ini.' };
             }
