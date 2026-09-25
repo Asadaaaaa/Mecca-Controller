@@ -988,15 +988,15 @@ Delivery: DO-001        Delivery: DO-002
 * [x] Validasi payload Ajv ketat & standarisasi ResponsePreset sukses/error
 * [x] Uji coba End-to-End siklus bisnis penuh dari Login $\rightarrow$ Customer/Warehouse/Product $\rightarrow$ Stok In/Adjustment $\rightarrow$ Quotation $\rightarrow$ Sales Order $\rightarrow$ Delivery (Potong Stok & Mutasi) $\rightarrow$ Invoice $\rightarrow$ Payment (Auto Lunas) $\rightarrow$ Realtime Dashboard Analytics (100% Pass)
 
-### Phase 11 — Pengaturan Sistem, Keamanan PIN & Kebijakan Pemesanan Stok (Status: IN PROGRESS / 60%)
+### Phase 11 — Pengaturan Sistem, Keamanan PIN & Kebijakan Pemesanan Stok (Status: COMPLETED / 100%)
 - [x] Database: Migration tabel `system_settings` (`key`, `value`, `description`, `updated_by`) & seeder konfigurasi awal
 - [x] Backend: Model Sequelize `SystemSettings.model.js`, `SystemSetting.route.js`, `SystemSetting.controller.js`, `SystemSetting.service.js`, `SystemSetting.repository.js`, `SystemSetting.validator.js`
 - [x] Backend: Endpoint manajemen PIN 6 digit (`PUT /primary/v1/settings/system/pin`), verifikasi PIN (`POST /primary/v1/settings/system/verify-pin`), dan toggle Force Sales Order (`PUT /primary/v1/settings/system/force-sales-order`)
 - [x] Backend (Sales Order): Pengecekan stok cerdas dengan otorisasi PIN 6 digit pada `POST /primary/v1/sales-orders` (parameter `force_override: true` dan `pin`)
 - [x] Backend (Delivery): Restriksi mutlak pengiriman barang (`createDelivery` dan `confirmDelivery`), menolak jika `quantity > physical_stock` tanpa opsi bypass untuk mencegah stok minus
-- [ ] Frontend Modul Settings: Sub modul `/settings/system` (Pengaturan Sistem) dengan card Keamanan PIN (Toggle status PIN, modal buat/ubah 6 digit PIN) dan card Kebijakan Pesanan (Toggle Force Create Sales Order yang dilindungi PIN)
-- [ ] Frontend Modul Sales Order: Modal dialog otorisasi PIN 6 digit yang muncul otomatis saat pengguna menekan tombol "Buat Sales Order" namun stok produk tidak mencukupi
-- [ ] Frontend Modul Delivery: Tampilan info ketersediaan stok fisik riil pada dialog pembuatan Surat Jalan dan restriksi input kuantitas maksimal kirim sesuai stok fisik
+- [x] Frontend Modul Settings: Sub modul `/settings/system` (Pengaturan Sistem) dengan card Keamanan PIN (Toggle status PIN, modal buat/ubah 6 digit PIN) dan card Kebijakan Pesanan (Toggle Force Create Sales Order yang dilindungi PIN)
+- [x] Frontend Modul Sales Order: Modal dialog otorisasi PIN 6 digit yang muncul otomatis saat pengguna menekan tombol "Buat Sales Order" namun stok produk tidak mencukupi
+- [x] Frontend Modul Delivery: Tampilan info ketersediaan stok fisik riil pada dialog pembuatan Surat Jalan dan restriksi input kuantitas maksimal kirim sesuai stok fisik
 
 ---
 
@@ -1145,7 +1145,7 @@ Delivery: DO-001        Delivery: DO-002
 
 
 
-### 21.12 Modul Pengaturan Sistem (PIN Security & Force Sales Order) & Strict Delivery Restrict (Status: SEDANG BERJALAN / 60%)
+### 21.12 Modul Pengaturan Sistem (PIN Security & Force Sales Order) & Strict Delivery Restrict (Status: SELESAI / 100%)
 - [x] **Database**: Migration tabel `system_settings` (`key`, `value`, `description`, `updated_by`) & seeder konfigurasi awal
 - [x] **Database**: Seeder default config (`security_pin_enabled: false`, `force_sales_order_enabled: false`)
 - [x] **Controller**: Model Sequelize `SystemSettings.model.js` & integrasi relasi di `Handler.model.js`
@@ -1153,7 +1153,7 @@ Delivery: DO-001        Delivery: DO-002
 - [x] **Controller**: Endpoint `GET /primary/v1/settings/system`, `PUT /primary/v1/settings/system/pin`, `PUT /primary/v1/settings/system/force-sales-order`, `POST /primary/v1/settings/system/verify-pin`
 - [x] **Controller (Sales Order)**: Validasi stok pada `SalesOrder.service.js` dengan dukungan `force_override: true` dan verifikasi hash PIN otorisasi
 - [x] **Controller (Delivery)**: Validasi mutlak pada `Delivery.service.js` (`createDelivery` & `confirmDelivery`) memblokir pengiriman jika kuantitas kirim > stok fisik riil
-- [ ] **Dashboard (UI Settings)**: Halaman Pengaturan Sistem `/settings/system` dengan kartu Keamanan PIN (Toggle + Modal Setup PIN 6 Digit) dan kartu Kebijakan Penjualan (Toggle Force Create SO dengan konfirmasi PIN)
-- [ ] **Dashboard (UI Sales Order)**: Modal Otorisasi PIN 6 Digit pada formulir Sales Order saat produk yang dipilih melebihi stok yang tersedia
-- [ ] **Dashboard (UI Delivery)**: Tampilan info stok fisik riil di dialog pembuatan Surat Jalan dan pembatasan maksimal input kuantitas kirim sesuai stok fisik yang tersedia
-- [ ] **Dashboard (Sidebar & Routing)**: Penambahan menu "Pengaturan Sistem" pada sidebar menu Settings dan route `/settings/system` di `App.tsx`
+- [x] **Dashboard (UI Settings)**: Halaman Pengaturan Sistem `/settings/system` dengan kartu Keamanan PIN (Toggle + Modal Setup PIN 6 Digit) dan kartu Kebijakan Penjualan (Toggle Force Create SO dengan konfirmasi PIN)
+- [x] **Dashboard (UI Sales Order)**: Modal Otorisasi PIN 6 Digit pada formulir Sales Order saat produk yang dipilih melebihi stok yang tersedia
+- [x] **Dashboard (UI Delivery)**: Tampilan info stok fisik riil di dialog pembuatan Surat Jalan dan pembatasan maksimal input kuantitas kirim sesuai stok fisik yang tersedia
+- [x] **Dashboard (Sidebar & Routing)**: Penambahan menu "Pengaturan Sistem" pada sidebar menu Settings dan route `/settings/system` di `App.tsx`
