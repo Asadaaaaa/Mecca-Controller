@@ -13,6 +13,8 @@ class SalesOrderValidator {
             "grand_total": { "type": "number" },
             "status": { "type": "string" },
             "notes": { "type": ["string", "null"] },
+            "force_override": { "type": "boolean" },
+            "pin": { "type": ["string", "null"] },
             "items": {
                 "type": "array",
                 "items": {

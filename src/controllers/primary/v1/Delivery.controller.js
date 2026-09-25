@@ -70,6 +70,9 @@ class DeliveryController {
             if (result === -4) {
                 return res.status(400).json(this.ResponsePreset.resErr(400, 'No valid delivery items provided', 'delivery', { code: -4 }));
             }
+            if (result && result.error) {
+                return res.status(400).json(this.ResponsePreset.resErr(400, result.message, 'delivery', result));
+            }
 
             return res.status(201).json(this.ResponsePreset.resOK('Delivery order created successfully', result, 201));
         } catch (error) {

@@ -1,4 +1,5 @@
-import { SalesOrderRepository, CustomerRepository, ProductRepository, WarehouseRepository } from "#repositoriesPrimaryV1";
+import { SalesOrderRepository, CustomerRepository, ProductRepository, WarehouseRepository, SystemSettingRepository } from "#repositoriesPrimaryV1";
+import { Sha256Helper } from "#helpers";
 
 class SalesOrderService {
     constructor(server) {
@@ -7,6 +8,8 @@ class SalesOrderService {
         this.customerRepo = new CustomerRepository(this.server);
         this.productRepo = new ProductRepository(this.server);
         this.warehouseRepo = new WarehouseRepository(this.server);
+        this.settingRepo = new SystemSettingRepository(this.server);
+        this.sha256Helper = new Sha256Helper(this.server);
     }
 
     async generateSalesOrderNumber(date = new Date()) {
@@ -148,6 +151,7 @@ class SalesOrderService {
             const warehouse_id = parseInt(data.warehouse_id || 1, 10);
 
             // 1. Strict Validation: Check Available Stock for each item
+            const insufficientItems = [];
             for (const item of (data.items || [])) {
                 const pId = parseInt(item.product_id, 10);
                 const reqQty = parseFloat(item.quantity) || 0;
@@ -156,17 +160,70 @@ class SalesOrderService {
                     if (reqQty > stockInfo.availableStock) {
                         const product = await this.server.model.products?.table.findByPk(pId, { transaction: t });
                         const prodName = product ? product.name : `Produk ID ${pId}`;
-                        return {
-                            error: 'INSUFFICIENT_STOCK',
+                        insufficientItems.push({
                             product_id: pId,
                             product_name: prodName,
                             physical: stockInfo.physicalStock,
                             reserved: stockInfo.reservedStock,
                             available: stockInfo.availableStock,
                             requested: reqQty,
-                            message: `Stok tidak mencukupi untuk "${prodName}". Stok fisik: ${stockInfo.physicalStock}, terpesan di pesanan aktif lain: ${stockInfo.reservedStock}, tersedia: ${stockInfo.availableStock}, diminta: ${reqQty}.`
+                            shortage: reqQty - stockInfo.availableStock
+                        });
+                    }
+                }
+            }
+
+            if (insufficientItems.length > 0) {
+                const first = insufficientItems[0];
+                const baseMessage = `Stok tidak mencukupi untuk "${first.product_name}". Stok fisik: ${first.physical}, terpesan: ${first.reserved}, tersedia: ${first.available}, diminta: ${first.requested}.`;
+
+                if (data.force_override) {
+                    const settingsMap = await this.settingRepo.getSettingsMap();
+                    const forceEnabled = settingsMap['force_sales_order_enabled'] === 'true';
+                    const pinEnabled = settingsMap['security_pin_enabled'] === 'true';
+                    const storedPinHash = settingsMap['security_pin_hash'];
+
+                    if (!forceEnabled) {
+                        return {
+                            error: 'FORCE_SO_DISABLED',
+                            message: 'Fitur Paksa Buat Pesanan (Force SO) dinonaktifkan di Pengaturan Sistem.',
+                            items: insufficientItems
                         };
                     }
+
+                    if (pinEnabled && storedPinHash) {
+                        if (!data.pin) {
+                            return {
+                                error: 'PIN_REQUIRED',
+                                message: 'PIN otorisasi 6 digit wajib dimasukkan untuk memaksa pembuatan pesanan.',
+                                items: insufficientItems
+                            };
+                        }
+                        const inputHash = this.sha256Helper.getHash(String(data.pin), this.server.env.HASH_SALT_PASSWORD);
+                        if (inputHash !== storedPinHash) {
+                            return {
+                                error: 'INVALID_PIN',
+                                message: 'PIN otorisasi salah. Pembuatan pesanan dibatalkan.',
+                                items: insufficientItems
+                            };
+                        }
+                    }
+
+                    data.notes = data.notes
+                        ? `${data.notes} [Disetujui Paksa via PIN]`
+                        : `[Disetujui Paksa via PIN]`;
+                } else {
+                    return {
+                        error: 'INSUFFICIENT_STOCK',
+                        message: baseMessage,
+                        product_id: first.product_id,
+                        product_name: first.product_name,
+                        physical: first.physical,
+                        reserved: first.reserved,
+                        available: first.available,
+                        requested: first.requested,
+                        items: insufficientItems
+                    };
                 }
             }
 

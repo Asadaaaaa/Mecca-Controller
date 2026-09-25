@@ -13,3 +13,4 @@ export { default as SalesOrderValidator } from "./SalesOrder.validator.js";
 export { default as DeliveryValidator } from "./Delivery.validator.js";
 export { default as InvoiceValidator } from "./Invoice.validator.js";
 export { default as PaymentValidator } from "./Payment.validator.js";
+export { default as SystemSettingValidator } from "./SystemSetting.validator.js";

@@ -25,3 +25,4 @@ export { default as InvoicesModel } from "./Invoices.model.js";
 export { default as InvoiceItemsModel } from "./InvoiceItems.model.js";
 export { default as PaymentsModel } from "./Payments.model.js";
 export { default as PaymentAllocationsModel } from "./PaymentAllocations.model.js";
+export { default as SystemSettingsModel } from "./SystemSettings.model.js";

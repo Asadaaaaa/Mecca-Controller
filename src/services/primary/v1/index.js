@@ -14,3 +14,4 @@ export { default as DeliveryService } from './Delivery.service.js';
 export { default as InvoiceService } from './Invoice.service.js';
 export { default as PaymentService } from './Payment.service.js';
 export { default as DashboardService } from './Dashboard.service.js';
+export { default as SystemSettingService } from './SystemSetting.service.js';

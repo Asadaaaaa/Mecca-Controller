@@ -78,8 +78,8 @@ class SalesOrderController {
 
             const user = req.middlewares?.authorization?.data || null;
             const result = await this.SalesOrderService.createSalesOrder(req.body, user);
-            if (result && result.error === 'INSUFFICIENT_STOCK') {
-                return res.status(400).json(this.ResponsePreset.resErr(400, result.message, 'inventory', result));
+            if (result && result.error) {
+                return res.status(400).json(this.ResponsePreset.resErr(400, result.message, 'sales_order', result));
             }
             return res.status(201).json(this.ResponsePreset.resOK('Sales Order created successfully', result, 201));
         } catch (error) {

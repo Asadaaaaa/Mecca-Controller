@@ -153,23 +153,38 @@ class DeliveryService {
                 const qty = parseFloat(item.quantity) || 0;
                 if (qty <= 0) continue;
 
+                const productId = soItemMap[soItemId]?.product_id || item.product_id;
+
                 if (soItemMap[soItemId]) {
                     const remaining = soItemMap[soItemId].ordered - soItemMap[soItemId].delivered;
                     if (qty > remaining) {
                         return -2; // Quantity exceeds remaining SO quantity
                     }
-                    itemsToCreate.push({
-                        sales_order_item_id: soItemId,
-                        product_id: soItemMap[soItemId].product_id,
-                        quantity: qty
-                    });
-                } else if (item.product_id) {
-                    itemsToCreate.push({
-                        sales_order_item_id: soItemId || null,
-                        product_id: item.product_id,
-                        quantity: qty
-                    });
                 }
+
+                // Strict restriction: Check available physical stock in warehouse
+                if (productId) {
+                    const stock = await this.inventoryRepo.findStockByWarehouseAndProduct(warehouse_id, productId, t);
+                    const currentPhysical = stock ? parseFloat(stock.quantity) : 0;
+                    if (qty > currentPhysical) {
+                        const product = await this.server.model.products?.table.findByPk(productId, { transaction: t });
+                        const prodName = product ? product.name : `Produk ID ${productId}`;
+                        return {
+                            error: 'INSUFFICIENT_PHYSICAL_STOCK',
+                            message: `Stok fisik di gudang tidak mencukupi untuk "${prodName}". Stok fisik saat ini: ${currentPhysical}, diminta kirim: ${qty}. Pengiriman tidak dapat dilakukan untuk mencegah stok minus.`,
+                            product_id: productId,
+                            product_name: prodName,
+                            available_physical: currentPhysical,
+                            requested: qty
+                        };
+                    }
+                }
+
+                itemsToCreate.push({
+                    sales_order_item_id: soItemId || null,
+                    product_id: productId,
+                    quantity: qty
+                });
             }
 
             if (itemsToCreate.length === 0) {

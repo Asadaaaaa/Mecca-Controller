@@ -26,6 +26,7 @@ import InvoicesModel from "./Invoices.model.js";
 import InvoiceItemsModel from "./InvoiceItems.model.js";
 import PaymentsModel from "./Payments.model.js";
 import PaymentAllocationsModel from "./PaymentAllocations.model.js";
+import SystemSettingsModel from "./SystemSettings.model.js";
 
 class Handler {
     constructor(server) {
@@ -81,6 +82,7 @@ class Handler {
         this.invoiceItems = new InvoiceItemsModel(this.server, this.db);
         this.payments = new PaymentsModel(this.server, this.db);
         this.paymentAllocations = new PaymentAllocationsModel(this.server, this.db);
+        this.systemSettings = new SystemSettingsModel(this.server, this.db);
 
         // Associations
         this.users.table.belongsToMany(this.roles.table, {
@@ -356,6 +358,11 @@ class Handler {
         this.invoices.table.hasMany(this.paymentAllocations.table, {
             foreignKey: 'invoice_id',
             as: 'allocations'
+        });
+
+        this.systemSettings.table.belongsTo(this.users.table, {
+            foreignKey: 'updated_by',
+            as: 'updater'
         });
 
         return this.db;
