@@ -18,6 +18,9 @@ class SalesOrderRoute {
         // Metrics endpoint (must be declared before :id route)
         this.API.get(this.endpointPrefix + '/metrics', auth, (req, res) => this.SalesOrderController.metrics(req, res));
 
+        // Available stock endpoint (must be declared before :id route)
+        this.API.get(this.endpointPrefix + '/available-stock', auth, (req, res) => this.SalesOrderController.availableStock(req, res));
+
         // Batch delete endpoint
         this.API.post(this.endpointPrefix + '/batch-delete', auth, (req, res) => this.SalesOrderController.batchDelete(req, res));
 

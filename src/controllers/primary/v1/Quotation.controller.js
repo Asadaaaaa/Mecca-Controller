@@ -129,6 +129,9 @@ class QuotationController {
             if (!result) {
                 return res.status(404).json(this.ResponsePreset.resErr(404, 'Quotation not found', 'quotation', { code: -1 }));
             }
+            if (result.error === 'INSUFFICIENT_STOCK') {
+                return res.status(400).json(this.ResponsePreset.resErr(400, result.message, 'inventory', result));
+            }
             return res.status(201).json(this.ResponsePreset.resOK('Quotation converted to Sales Order successfully', result, 201));
         } catch (error) {
             this.server.sendLogs(error);

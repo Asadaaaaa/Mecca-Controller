@@ -139,8 +139,37 @@ class SalesOrderService {
         };
     }
 
+    async getAvailableStock(warehouse_id, product_id, excludeSalesOrderId = null) {
+        return await this.salesOrderRepo.getAvailableStock(warehouse_id, product_id, excludeSalesOrderId);
+    }
+
     async createSalesOrder(data, user = null) {
         return await this.server.model.db.transaction(async (t) => {
+            const warehouse_id = parseInt(data.warehouse_id || 1, 10);
+
+            // 1. Strict Validation: Check Available Stock for each item
+            for (const item of (data.items || [])) {
+                const pId = parseInt(item.product_id, 10);
+                const reqQty = parseFloat(item.quantity) || 0;
+                if (pId && reqQty > 0) {
+                    const stockInfo = await this.salesOrderRepo.getAvailableStock(warehouse_id, pId, null, t);
+                    if (reqQty > stockInfo.availableStock) {
+                        const product = await this.server.model.products?.table.findByPk(pId, { transaction: t });
+                        const prodName = product ? product.name : `Produk ID ${pId}`;
+                        return {
+                            error: 'INSUFFICIENT_STOCK',
+                            product_id: pId,
+                            product_name: prodName,
+                            physical: stockInfo.physicalStock,
+                            reserved: stockInfo.reservedStock,
+                            available: stockInfo.availableStock,
+                            requested: reqQty,
+                            message: `Stok tidak mencukupi untuk "${prodName}". Stok fisik: ${stockInfo.physicalStock}, terpesan di pesanan aktif lain: ${stockInfo.reservedStock}, tersedia: ${stockInfo.availableStock}, diminta: ${reqQty}.`
+                        };
+                    }
+                }
+            }
+
             const sales_order_number = data.sales_order_number || await this.generateSalesOrderNumber(data.order_date || new Date());
 
             let calculatedSubtotal = 0;
@@ -178,7 +207,7 @@ class SalesOrderService {
                 sales_order_number,
                 customer_id: data.customer_id,
                 quotation_id: data.quotation_id || null,
-                warehouse_id: data.warehouse_id || 1,
+                warehouse_id,
                 order_date: data.order_date || new Date().toISOString().slice(0, 10),
                 subtotal,
                 discount_amount,
@@ -206,7 +235,32 @@ class SalesOrderService {
             const salesOrder = await this.salesOrderRepo.findSalesOrderById(id, t);
             if (!salesOrder) return null;
 
+            const warehouse_id = parseInt(data.warehouse_id || salesOrder.warehouse_id || 1, 10);
+
             if (data.items && Array.isArray(data.items)) {
+                // Check available stock (excluding this SO's previous items)
+                for (const item of data.items) {
+                    const pId = parseInt(item.product_id, 10);
+                    const reqQty = parseFloat(item.quantity) || 0;
+                    if (pId && reqQty > 0) {
+                        const stockInfo = await this.salesOrderRepo.getAvailableStock(warehouse_id, pId, id, t);
+                        if (reqQty > stockInfo.availableStock) {
+                            const product = await this.server.model.products?.table.findByPk(pId, { transaction: t });
+                            const prodName = product ? product.name : `Produk ID ${pId}`;
+                            return {
+                                error: 'INSUFFICIENT_STOCK',
+                                product_id: pId,
+                                product_name: prodName,
+                                physical: stockInfo.physicalStock,
+                                reserved: stockInfo.reservedStock,
+                                available: stockInfo.availableStock,
+                                requested: reqQty,
+                                message: `Stok tidak mencukupi untuk "${prodName}". Stok fisik: ${stockInfo.physicalStock}, terpesan di pesanan aktif lain: ${stockInfo.reservedStock}, tersedia: ${stockInfo.availableStock}, diminta: ${reqQty}.`
+                            };
+                        }
+                    }
+                }
+
                 await this.salesOrderRepo.salesOrderItemTable.destroy({
                     where: { sales_order_id: id },
                     transaction: t
@@ -253,10 +307,36 @@ class SalesOrderService {
     }
 
     async confirmSalesOrder(id) {
-        const order = await this.salesOrderRepo.findSalesOrderById(id);
-        if (!order) return null;
-        await order.update({ status: 'Siap Kirim' });
-        return order;
+        return await this.server.model.db.transaction(async (t) => {
+            const order = await this.salesOrderRepo.findSalesOrderById(id, t);
+            if (!order) return null;
+
+            const warehouse_id = parseInt(order.warehouse_id || 1, 10);
+            for (const item of (order.items || [])) {
+                const pId = parseInt(item.product_id, 10);
+                const reqQty = (parseFloat(item.quantity) || 0) - (parseFloat(item.delivered_quantity) || 0);
+                if (pId && reqQty > 0) {
+                    const stockInfo = await this.salesOrderRepo.getAvailableStock(warehouse_id, pId, id, t);
+                    if (reqQty > stockInfo.availableStock) {
+                        const product = await this.server.model.products?.table.findByPk(pId, { transaction: t });
+                        const prodName = product ? product.name : `Produk ID ${pId}`;
+                        return {
+                            error: 'INSUFFICIENT_STOCK',
+                            product_id: pId,
+                            product_name: prodName,
+                            physical: stockInfo.physicalStock,
+                            reserved: stockInfo.reservedStock,
+                            available: stockInfo.availableStock,
+                            requested: reqQty,
+                            message: `Stok tidak mencukupi untuk mengonfirmasi pesanan "${prodName}". Stok fisik: ${stockInfo.physicalStock}, terpesan di pesanan aktif lain: ${stockInfo.reservedStock}, tersedia: ${stockInfo.availableStock}, sisa belum kirim: ${reqQty}.`
+                        };
+                    }
+                }
+            }
+
+            await order.update({ status: 'Siap Kirim' }, { transaction: t });
+            return order;
+        });
     }
 
     async cancelSalesOrder(id) {

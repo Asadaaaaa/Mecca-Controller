@@ -46,6 +46,24 @@ class SalesOrderController {
         }
     }
 
+    async availableStock(req, res) {
+        try {
+            const { warehouse_id, product_id, exclude_so_id } = req.query;
+            if (!warehouse_id || !product_id) {
+                return res.status(400).json(this.ResponsePreset.resErr(400, 'warehouse_id and product_id are required', 'validator', { code: -1 }));
+            }
+            const stockInfo = await this.SalesOrderService.getAvailableStock(
+                parseInt(warehouse_id, 10),
+                parseInt(product_id, 10),
+                exclude_so_id ? parseInt(exclude_so_id, 10) : null
+            );
+            return res.status(200).json(this.ResponsePreset.resOK('OK', stockInfo));
+        } catch (error) {
+            this.server.sendLogs(error);
+            return res.status(500).json(this.ResponsePreset.resErr(500, error.message, 'server', { code: -1 }));
+        }
+    }
+
     async create(req, res) {
         try {
             const schemeValidate = this.Ajv.compile(this.DataScheme.create);
@@ -60,6 +78,9 @@ class SalesOrderController {
 
             const user = req.middlewares?.authorization?.data || null;
             const result = await this.SalesOrderService.createSalesOrder(req.body, user);
+            if (result && result.error === 'INSUFFICIENT_STOCK') {
+                return res.status(400).json(this.ResponsePreset.resErr(400, result.message, 'inventory', result));
+            }
             return res.status(201).json(this.ResponsePreset.resOK('Sales Order created successfully', result, 201));
         } catch (error) {
             this.server.sendLogs(error);
@@ -84,6 +105,9 @@ class SalesOrderController {
             if (!result) {
                 return res.status(404).json(this.ResponsePreset.resErr(404, 'Sales Order not found', 'sales_order', { code: -1 }));
             }
+            if (result.error === 'INSUFFICIENT_STOCK') {
+                return res.status(400).json(this.ResponsePreset.resErr(400, result.message, 'inventory', result));
+            }
             return res.status(200).json(this.ResponsePreset.resOK('Sales Order updated successfully', result));
         } catch (error) {
             this.server.sendLogs(error);
@@ -97,6 +121,9 @@ class SalesOrderController {
             const result = await this.SalesOrderService.confirmSalesOrder(id);
             if (!result) {
                 return res.status(404).json(this.ResponsePreset.resErr(404, 'Sales Order not found', 'sales_order', { code: -1 }));
+            }
+            if (result.error === 'INSUFFICIENT_STOCK') {
+                return res.status(400).json(this.ResponsePreset.resErr(400, result.message, 'inventory', result));
             }
             return res.status(200).json(this.ResponsePreset.resOK('Sales Order confirmed successfully', result));
         } catch (error) {

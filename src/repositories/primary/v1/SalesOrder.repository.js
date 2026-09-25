@@ -249,6 +249,75 @@ class SalesOrderRepository {
             totalAmount
         };
     }
+
+    async getAvailableStock(warehouse_id, product_id, excludeSalesOrderId = null, transaction = null) {
+        const pId = parseInt(product_id, 10);
+        const wId = parseInt(warehouse_id, 10);
+
+        // 1. Get physical on-hand stock
+        let physicalStock = 0;
+        const stockTable = this.server.model?.warehouseStocks?.table;
+        if (stockTable) {
+            const stockRecord = await stockTable.findOne({
+                where: { warehouse_id: wId, product_id: pId },
+                transaction
+            });
+            if (stockRecord) {
+                physicalStock = parseFloat(stockRecord.quantity) || 0;
+            }
+        }
+
+        // 2. Calculate reserved stock from all active unfulfilled Sales Orders in this warehouse
+        let reservedStock = 0;
+        const soTable = this.salesOrderTable;
+        const soItemTable = this.salesOrderItemTable;
+
+        if (soTable && soItemTable) {
+            const soWhere = {
+                warehouse_id: wId,
+                status: {
+                    [Op.notIn]: ['Selesai', 'Selesai Dikirim', 'Dibatalkan', 'CANCELLED', 'FULLY_DELIVERED']
+                }
+            };
+            if (excludeSalesOrderId) {
+                soWhere.id = { [Op.ne]: excludeSalesOrderId };
+            }
+
+            const activeOrders = await soTable.findAll({
+                where: soWhere,
+                include: [
+                    {
+                        model: soItemTable,
+                        as: 'items',
+                        where: { product_id: pId },
+                        required: true
+                    }
+                ],
+                transaction
+            });
+
+            for (const order of activeOrders) {
+                if (order.items) {
+                    for (const item of order.items) {
+                        const ordered = parseFloat(item.quantity) || 0;
+                        const delivered = parseFloat(item.delivered_quantity) || 0;
+                        const remaining = Math.max(0, ordered - delivered);
+                        reservedStock += remaining;
+                    }
+                }
+            }
+        }
+
+        const availableStock = Math.max(0, physicalStock - reservedStock);
+
+        return {
+            warehouse_id: wId,
+            product_id: pId,
+            physicalStock,
+            reservedStock,
+            availableStock
+        };
+    }
 }
 
 export default SalesOrderRepository;

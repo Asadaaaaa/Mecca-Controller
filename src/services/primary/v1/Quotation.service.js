@@ -278,12 +278,37 @@ class QuotationService {
             }
             const sales_order_number = `${prefix}${nextSeq}`;
 
+            const warehouse_id = 1; // Default warehouse utama
+
+            // Strict Validation: Check Available Stock for each item in Quotation
+            for (const item of (quotation.items || [])) {
+                const pId = parseInt(item.product_id, 10);
+                const reqQty = parseFloat(item.quantity) || 0;
+                if (pId && reqQty > 0) {
+                    const stockInfo = await this.salesOrderRepo.getAvailableStock(warehouse_id, pId, null, t);
+                    if (reqQty > stockInfo.availableStock) {
+                        const product = await this.server.model.products?.table.findByPk(pId, { transaction: t });
+                        const prodName = product ? product.name : `Produk ID ${pId}`;
+                        return {
+                            error: 'INSUFFICIENT_STOCK',
+                            product_id: pId,
+                            product_name: prodName,
+                            physical: stockInfo.physicalStock,
+                            reserved: stockInfo.reservedStock,
+                            available: stockInfo.availableStock,
+                            requested: reqQty,
+                            message: `Tidak dapat mengonversi ke Pesanan Penjualan. Stok tidak mencukupi untuk "${prodName}". Stok fisik: ${stockInfo.physicalStock}, terpesan di pesanan aktif lain: ${stockInfo.reservedStock}, tersedia: ${stockInfo.availableStock}, diminta: ${reqQty}.`
+                        };
+                    }
+                }
+            }
+
             // Create Sales Order
             const salesOrder = await this.salesOrderRepo.createSalesOrder({
                 sales_order_number,
                 customer_id: quotation.customer_id,
                 quotation_id: quotation.id,
-                warehouse_id: 1, // Default warehouse utama
+                warehouse_id,
                 order_date: now.toISOString().slice(0, 10),
                 subtotal: quotation.subtotal,
                 discount_amount: quotation.discount_amount,
