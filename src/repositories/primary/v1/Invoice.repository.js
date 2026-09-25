@@ -85,7 +85,7 @@ class InvoiceRepository {
                 {
                     model: this.customerTable,
                     as: 'customer',
-                    attributes: ['id', 'code', 'name', 'phone', 'email', 'address', 'payment_terms']
+                    attributes: ['id', 'code', 'name', 'phone', 'email', 'address']
                 },
                 {
                     model: this.deliveryTable,

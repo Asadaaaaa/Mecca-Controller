@@ -55,8 +55,7 @@ class CustomerService {
             pic_name: data.pic_name || null,
             phone: data.phone || null,
             email: data.email || null,
-            address: data.address || null,
-            payment_terms: data.payment_terms !== undefined && data.payment_terms !== null ? data.payment_terms : 30
+            address: data.address || null
         });
 
         return newCustomer;

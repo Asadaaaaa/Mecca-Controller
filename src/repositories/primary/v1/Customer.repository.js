@@ -24,7 +24,7 @@ class CustomerRepository {
             ];
         }
 
-        const validSortFields = ['id', 'code', 'name', 'phone', 'email', 'payment_terms', 'created_at'];
+        const validSortFields = ['id', 'code', 'name', 'phone', 'email', 'created_at'];
         const sortField = validSortFields.includes(sort) ? sort : 'created_at';
         const sortOrder = order.toUpperCase() === 'ASC' ? 'ASC' : 'DESC';
 

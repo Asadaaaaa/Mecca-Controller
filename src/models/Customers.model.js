@@ -35,11 +35,6 @@ class CustomersModel {
         type: DataTypes.TEXT,
         allowNull: true
       },
-      payment_terms: {
-        type: DataTypes.INTEGER,
-        allowNull: false,
-        defaultValue: 30
-      },
       created_at: {
         type: DataTypes.DATE,
         allowNull: false,

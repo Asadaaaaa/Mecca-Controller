@@ -21,9 +21,6 @@ class CustomerValidator {
             },
             "address": {
                 "type": ["string", "null"]
-            },
-            "payment_terms": {
-                "type": ["integer", "null"]
             }
         },
         "required": ["name"],
@@ -52,9 +49,6 @@ class CustomerValidator {
             },
             "address": {
                 "type": ["string", "null"]
-            },
-            "payment_terms": {
-                "type": ["integer", "null"]
             }
         },
         "additionalProperties": false

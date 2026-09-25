@@ -188,9 +188,7 @@ class InvoiceService {
                 return -3; // Customer ID required
             }
 
-            // Customer for payment terms
-            const customer = await this.server.model.customers.table.findByPk(customer_id, { transaction: t });
-            const paymentTermsDays = customer?.payment_terms || 30;
+            const paymentTermsDays = 30;
 
             const invoice_date = data.invoice_date || new Date().toISOString().slice(0, 10);
             let due_date = data.due_date;
