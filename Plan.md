@@ -172,11 +172,13 @@ updated_at          TIMESTAMP
 #### permissions
 ```text
 id                  BIGINT (PK, Auto Increment)
-name                VARCHAR (e.g. sales_order.create, invoice.approve)
+name                VARCHAR (e.g. sales_order.create, invoice.approve, customer.delete, product.delete)
 description         TEXT
 created_at          TIMESTAMP
 updated_at          TIMESTAMP
 ```
+
+*Granular Delete Permissions: Seluruh aksi penghapusan data (`.delete`) dipisahkan menjadi hak akses eksplisit per modul (misal `user.delete`, `customer.delete`, `product.delete`, `category.delete`, `quotation.delete`, `sales_order.delete`, `delivery.delete`, `invoice.delete`, `payment.delete`, `warehouse.delete`) guna mencegah penghapusan tanpa wewenang oleh staf operasional biasa.*
 
 #### role_permissions
 ```text
@@ -214,7 +216,10 @@ created_at          TIMESTAMP
 updated_at          TIMESTAMP
 ```
 
-*Catatan: Customer murni entitas master pembeli/klien dan BUKAN Warehouse. Data transaksi seperti riwayat belanja (lifetime spend), piutang belum tertagih (total unpaid), dan tanggal kunjungan dihitung secara dinamis dari relasi tabel transaksi penjualan & invoice.*
+*Catatan Customer:
+- Customer murni entitas master pembeli/klien dan BUKAN Warehouse.
+- **Counter Customer Total Purchase**: Sistem menghitung secara dinamis akumulasi total frekuensi transaksi pesanan (`order_count`) dan total nominal rupiah belanja pelanggan (`lifetime_spend`) dari transaksi penjualan dan faktur yang telah selesai/lunas. Metrik ini disajikan pada daftar customer dan ringkasan metrik untuk memudahkan pemantauan loyalitas pelanggan.
+- Piutang belum tertagih (`total_unpaid`) dan tanggal transaksi terakhir dihitung secara dinamis dari relasi invoice.*
 
 ---
 
@@ -263,18 +268,29 @@ updated_at          TIMESTAMP
 #### products
 ```text
 id                  BIGINT (PK, Auto Increment)
-code                VARCHAR (Unique, e.g. PRD-001)
+code                VARCHAR (Unique, e.g. PRD-2026-000001)
 name                VARCHAR
 category_id         BIGINT (FK -> product_categories.id)
 unit_id             BIGINT (FK -> units.id)
-selling_price       DECIMAL(15, 2)
+cost_price          DECIMAL(15, 2) (Harga Modal / HPP, Default: 0)
+selling_price       DECIMAL(15, 2) (Harga Jual)
 tax_id              BIGINT (FK -> taxes.id, Nullable)
 status              VARCHAR (active, inactive)
 created_at          TIMESTAMP
 updated_at          TIMESTAMP
 ```
 
-*Catatan: Harga produk bersifat global.*
+*Catatan & Aturan Operasional Produk & Kategori*:
+1. **Harga Modal (`cost_price`)**: Menampung harga pokok modal/pembelian produk guna memfasilitasi kalkulasi laba kotor (*Gross Margin = selling_price - cost_price*) dan valuasi riil persediaan aset di gudang.
+2. **SKU / Kode Produk (Manual & Generate)**:
+   - Pengguna dapat mengetik SKU secara manual (misal kode barcode pabrik / format internal).
+   - Disediakan tombol **"Generate Code"** pada formulir produk untuk menghasilkan kode urut standar unik (`PRD-YYYY-XXXX`).
+3. **Kode Kategori (Manual & Auto-Generate di Backend)**:
+   - Pengguna dapat mengisi kode kategori secara manual.
+   - Jika field input kode kategori **dikosongkan**, maka Backend (BE) akan secara otomatis men-generate kode urut (`CAT-001`, `CAT-002`, dst). Tanpa memerlukan tombol klik generate di UI.
+4. **Bulk Import Produk**:
+   - Disediakan modul bulk import produk massal via upload file spreadsheet (Excel `.xlsx` / `.csv`).
+   - Format template import standar akan disediakan oleh pengguna untuk memuat field: Kode, Nama, Kategori, Satuan, Harga Modal, Harga Jual, PPN, dan Stok Minimum.
 
 ---
 
@@ -460,7 +476,7 @@ total               DECIMAL(15, 2)
 ```text
 id                  BIGINT (PK, Auto Increment)
 delivery_number     VARCHAR (Unique, e.g. DO-2026-000001)
-sales_order_id      BIGINT (FK -> sales_orders.id)
+sales_order_id      BIGINT (FK -> sales_orders.id, Nullable - mendukung multi-SO)
 warehouse_id        BIGINT (FK -> warehouses.id)
 customer_id         BIGINT (FK -> customers.id)
 delivery_date       DATE
@@ -471,24 +487,39 @@ created_at          TIMESTAMP
 updated_at          TIMESTAMP
 ```
 
+#### delivery_sales_orders
+```text
+id                  BIGINT (PK, Auto Increment)
+delivery_id         BIGINT (FK -> deliveries.id)
+sales_order_id      BIGINT (FK -> sales_orders.id)
+created_at          TIMESTAMP
+```
+
 #### delivery_items
 ```text
 id                  BIGINT (PK, Auto Increment)
 delivery_id         BIGINT (FK -> deliveries.id)
+sales_order_id      BIGINT (FK -> sales_orders.id)
 sales_order_item_id BIGINT (FK -> sales_order_items.id)
 product_id          BIGINT (FK -> products.id)
 quantity            DECIMAL(12, 2)
 ```
 
-### 7.2 Partial Delivery & Stock Deduction
-* Satu Sales Order dapat dikirim melalui beberapa kali Delivery (Partial Delivery).
-* Total kuantitas terkirim dari seluruh Delivery tidak boleh melebihi kuantitas yang dipesan pada Sales Order.
-* Saat Delivery dikonfirmasi (`POST /primary/v1/deliveries/:id/confirm`):
-  1. Validasi kecukupan stok di Warehouse terkait.
-  2. Kurangi `warehouse_stocks.quantity`.
-  3. Catat riwayat di `stock_movements` dengan type `SALES_DELIVERY`.
-  4. Perbarui status Delivery menjadi `CONFIRMED`.
-  5. Perbarui status Sales Order (`PARTIALLY_DELIVERED` atau `FULLY_DELIVERED`).
+### 7.2 Partial Delivery & Multi-SO Consolidation
+* **Konsolidasi Beberapa Sales Order ke 1 Delivery (Multi-SO into 1 DO)**:
+  - Satu Delivery Order (DO) dapat menggabungkan item dari beberapa Sales Order (SO) sekaligus, asalkan:
+    1. Seluruh Sales Order yang digabungkan milik Customer (`customer_id`) yang sama.
+    2. Dilayani dari gudang (`warehouse_id`) asal yang sama.
+    3. Seluruh Sales Order berstatus aktif (`CONFIRMED` atau `PARTIALLY_DELIVERED`).
+  - Tiap baris `delivery_items` menyimpan referensi `sales_order_id` dan `sales_order_item_id` asal barang tersebut.
+* **Partial Delivery & Stock Deduction**:
+  - Total kuantitas terkirim dari seluruh Delivery tidak boleh melebihi sisa kuantitas pesanan pada masing-masing Sales Order.
+  - Saat Delivery dikonfirmasi (`POST /primary/v1/deliveries/:id/confirm`):
+    1. Validasi kecukupan saldo stok di Warehouse terkait.
+    2. Kurangi `warehouse_stocks.quantity`.
+    3. Catat riwayat di `stock_movements` dengan type `SALES_DELIVERY`.
+    4. Perbarui status Delivery menjadi `CONFIRMED`.
+    5. Perbarui status masing-masing Sales Order yang terlibat secara proporsional (`PARTIALLY_DELIVERED` atau `FULLY_DELIVERED` jika seluruh item pesanan telah terpenuhi).
 
 ### 7.3 Restriksi Mutlak Pengiriman (Zero Negative Stock Guardrail)
 * **Prinsip Utama: Mencegah Terjadinya Stok Minus**:
@@ -517,7 +548,9 @@ Untuk mengakomodasi fleksibilitas operasional pergudangan dan logistik distribus
    * **Garis Karakter ASCII Murni**: Menggunakan garis pembatas teks karakter ASCII (`====` dan `----`) sehingga pencetakan berlangsung instan, tajam, dan hemat pita (*ribbon-friendly*).
    * **Pratinjau Kertas Continuous Form**: Dashboard menyajikan simulasi kertas continuous form hijau klasik dengan blok `<pre>` yang rapi dan mudah dibaca.
    * **Tombol "Salin Raw ASCII"**: Fitur 1-klik untuk menyalin seluruh string teks mentah 80 kolom ke clipboard guna kemudahan direct print melalui command line spooler (LPT/COM), raw print utility, maupun teks editor.
-   * **Konfigurasi Cetak Continuous Form**: Cetak dokumen langsung diatur dengan CSS `@page { size: 210mm 140mm; }` agar ramah kertas continuous form standar (9.5 × 5.5 inci / half-letter).
+   * **Penyesuaian Ukuran Kertas & Format Cetak**:
+     - Mendukung opsi ukuran kertas standar continuous form: **Half-Letter (210mm × 140mm / 9.5 × 5.5 inci)** untuk transaksi ringkas dan **Full Page (210mm × 280mm / 9.5 × 11 inci)** untuk transaksi dengan muatan banyak item.
+     - Penyesuaian densitas karakter (10 CPI / 12 CPI / condensed) dan margin print agar pas dengan traktor lubang jarum (*pin-feed tractor*).
 
 ---
 
@@ -544,6 +577,14 @@ created_at          TIMESTAMP
 updated_at          TIMESTAMP
 ```
 
+#### invoice_deliveries
+```text
+id                  BIGINT (PK, Auto Increment)
+invoice_id          BIGINT (FK -> invoices.id)
+delivery_id         BIGINT (FK -> deliveries.id)
+created_at          TIMESTAMP
+```
+
 #### invoice_items
 ```text
 id                  BIGINT (PK, Auto Increment)
@@ -558,10 +599,14 @@ subtotal            DECIMAL(15, 2)
 total               DECIMAL(15, 2)
 ```
 
-### 8.2 Hubungan Invoice & Delivery
-* Invoice dibuat berdasarkan Delivery yang telah dikonfirmasi.
-* Mendukung 1 Delivery → 1 Invoice, atau Menggabungkan beberapa Delivery → 1 Invoice konsolidasi.
-* Kuantitas yang ditagih tidak boleh melebihi kuantitas yang telah dikirim.
+### 8.2 Hubungan Invoice & Delivery (Konsolidasi Multi-DO & Aturan Harga Terkunci)
+* **Konsolidasi Beberapa Delivery ke 1 Invoice (Multi-DO into 1 Invoice)**:
+  - Satu Invoice dapat mengonsolidasikan beberapa Delivery Order (DO) terkonfirmasi milik customer yang sama.
+  - Sistem mencegah *double-invoicing*: Item DO yang telah ditagihkan tidak akan muncul kembali pada pemilihan penerbitan invoice baru.
+* **Aturan Mutlak Sumber Harga Satuan (Locked Order Price)**:
+  - **Harga satuan (`unit_price`), diskon, dan tarif pajak pada Invoice WAJIB diambil dan diwarisi langsung dari `sales_order_items`**, BUKAN dari master produk (`products.selling_price`).
+  - Hal ini menjamin nilai tagihan faktur tetap 100% konsisten dengan surat pesanan yang telah disepakati pelanggan, meskipun terjadi perubahan harga katalog produk di kemudian hari.
+* Kuantitas yang ditagih tidak boleh melebihi kuantitas yang telah dikirim pada Delivery terkait.
 
 ---
 
@@ -863,6 +908,17 @@ dashboard/
 > * Jika pengguna belum login, token tidak valid (code `-2`), atau token telah kedaluwarsa (code `-3`), maka HTTP Interceptor frontend dan Route Guard akan langsung menghapus token lokal dan **me-redirect pengguna seketika ke halaman `/login`**.
 > * Saat request dilakukan oleh pengguna yang aktif dalam rentang **1.5 jam**, HTTP client secara transparan menyegarkan (*refresh*) token ke endpoint `/primary/v1/auth/refresh-token` agar sesi tetap berjalan mulus.
 
+### 14.1 Status Penyimpanan Draft pada Modal Create (Form Draft Auto-Save & Recovery)
+Untuk mencegah hilangnya data input formulir yang panjang atau kompleks akibat modal tidak sengaja tertutup, browser reload, maupun gangguan jaringan:
+* **Mekanisme Local Draft Cache (`useFormDraft`)**:
+  - Setiap kali pengguna mengisi form pada modal create (Quotation, Sales Order, Delivery, Invoice, Product), nilai input dan baris rincian item disimpan secara reaktif ke `localStorage` browser.
+  - Jika modal ditutup sebelum data disimpan ke server, draf tetap aman tersimpan.
+  - Saat modal dibuka kembali, sistem menampilkan alert banner pemulihan:
+    *"Ditemukan draf formulir yang belum disimpan. Pulihkan data?"* dilengkapi tombol **[Pulihkan Draf]** dan **[Buang Draf]**.
+  - Saat form berhasil disubmit ke server (`HTTP 200/201`), cache draf lokal otomatis dibersihkan.
+* **Status Dokumen DRAFT**:
+  - Dokumen transaksi operasional (Penawaran, Pesanan, Pengiriman, Faktur) mendukung penyimpanan resmi sebagai status `DRAFT` sebelum diajukan untuk persetujuan (*approval*) atau konfirmasi pemotongan stok fisik.
+
 ---
 
 ## 15. DOCUMENT NUMBERING FORMAT
@@ -1022,6 +1078,41 @@ Delivery: DO-001        Delivery: DO-002
 - [x] Frontend Modul Sales Order: Modal dialog otorisasi PIN 6 digit yang muncul otomatis saat pengguna menekan tombol "Buat Sales Order" namun stok produk tidak mencukupi
 - [x] Frontend Modul Delivery: Tampilan info ketersediaan stok fisik riil pada dialog pembuatan Surat Jalan dan restriksi input kuantitas maksimal kirim sesuai stok fisik
 - [x] Frontend Modul Operasional (UI Standardization): Penyeragaman desain kartu KPI Overview di seluruh 9 modul operasional dan menu navigasi cepat "Pengaturan Sistem" pada profil akun sidebar (`nav-user.tsx`)
+
+### Phase 12 — Enhancements, Consolidations & Operational Refinements (Status: DALAM PERENCANAAN / 0%)
+- [ ] **Multi-SO dalam 1 DO**:
+  - Migrasi database tabel `deliveries` (`sales_order_id` nullable), tabel junction `delivery_sales_orders`, dan pembaruan `delivery_items` (`sales_order_id`, `sales_order_item_id`).
+  - Backend Controller & Service: `createDelivery` mendukung payload array `sales_order_ids`, validasi kesamaan customer & warehouse, validasi kuantitas tidak melebihi sisa item masing-masing SO, dan pembaruan status parsial/penuh tiap SO terkait.
+  - Frontend Dashboard: Modal dialog Buat Surat Jalan mendukung pemilihan Customer dan multi-select Sales Order aktif.
+- [ ] **Multi-DO dalam 1 Invoice**:
+  - Migrasi database tabel junction `invoice_deliveries (invoice_id, delivery_id)`.
+  - Backend Controller & Service: `createInvoice` mendukung array `delivery_ids` milik customer yang sama dan pencegahan double-invoicing.
+  - Frontend Dashboard: Modal dialog Terbitkan Faktur mendukung multi-select DO terkonfirmasi.
+- [ ] **Perbaikan Sumber Harga Faktur (Inherit Order Price)**:
+  - Backend Controller: Harga satuan (`unit_price`), diskon, dan persentase pajak pada baris item Invoice dikunci dan diwarisi langsung dari `sales_order_items.unit_price`, BUKAN dari `products.selling_price`.
+- [ ] **SKU Produk: Manual Ketik & Tombol Generate Code**:
+  - Frontend: Tombol "Generate Code" pada formulir produk yang secara instan menghasilkan kode SKU unik (`PRD-YYYY-XXXX`). Pengguna tetap bebas mengetik SKU manual/barcode.
+- [ ] **Kode Kategori: Manual Ketik & Auto-Generate di Backend**:
+  - Backend: Logic auto-generate kode kategori (`CAT-001`, `CAT-002`, dst) saat payload `code` dikosongkan/null.
+  - Frontend: Input kode kategori dijadikan opsional di formulir kategori (tanpa tombol generate di UI).
+- [ ] **Harga Modal Produk (`cost_price`)**:
+  - Database: Migrasi penambahan kolom `cost_price DECIMAL(15, 2) DEFAULT 0` pada tabel `products`.
+  - Backend: Dukungan input & update `cost_price` pada API Produk serta integrasi kalkulasi valuasi stok dan estimasi margin kotor.
+  - Frontend: Input Harga Modal / HPP pada dialog produk.
+- [ ] **Penyesuaian Ukuran Cetak Dot Matrix**:
+  - Frontend: Dropdown pilihan ukuran kertas continuous form pada dialog preview cetak DO: Half-Letter (210mm × 140mm) dan Full Page (210mm × 280mm), beserta penyesuaian margin dan densitas karakter cetak jarum.
+- [ ] **Bulk Import Produk via Excel / CSV**:
+  - Arsitektur backend & frontend siap menerima format template resmi dari pengguna.
+  - Backend: Endpoint validasi dan batch insert produk `POST /primary/v1/products/bulk-import`.
+  - Frontend: Modal upload file spreadsheet, preview data valid/error, dan tombol eksekusi import massal.
+- [ ] **Status Penyimpanan Draf pada Modal Create**:
+  - Frontend: Utilitas penyimpanan lokal draf formulir (`localStorage`) pada modal Quotation, Sales Order, DO, Invoice, dan Produk dengan dialog konfirmasi pulihkan/buang draf saat dibuka kembali.
+- [ ] **Counter Customer Total Purchase**:
+  - Backend: Kalkulasi agregat `order_count` dan `lifetime_spend` pada query daftar & detail customer.
+  - Frontend: Tampilan metrik total order dan total akumulasi belanja pada tabel Customer dan kartu overview.
+- [ ] **Granular Delete Permissions**:
+  - Database & Seeder: Master permission baru (`*.delete`) untuk setiap modul operasional dan pemetaan ke role Superadmin.
+  - Frontend: Proteksi permission guard pada seluruh tombol dan aksi Hapus data di antarmuka pengguna.
 
 ---
 
@@ -1183,3 +1274,38 @@ Delivery: DO-001        Delivery: DO-002
 - [x] **Dashboard (UI Delivery)**: Tampilan info stok fisik riil di dialog pembuatan Surat Jalan dan pembatasan maksimal input kuantitas kirim sesuai stok fisik yang tersedia
 - [x] **Dashboard (Sidebar & Routing)**: Penambahan menu "Pengaturan Sistem" pada sidebar menu Settings, menu cepat profil user di sidebar bawah (`nav-user.tsx`), dan route `/settings/system` di `App.tsx`
 - [x] **Dashboard (UI Standardization)**: Penyeragaman visual kartu KPI Overview di seluruh 9 modul operasional dan penyederhanaan judul overview menjadi "Overview"
+
+### 21.13 Modul Enhancements, Consolidations & Granular Security (Phase 12) (Status: DALAM PERENCANAAN / 0%)
+- [ ] **Multi-SO dalam 1 DO**:
+  - [ ] **Database**: Migrasi `deliveries` (`sales_order_id` nullable), tabel junction `delivery_sales_orders`, dan kolom `sales_order_id`, `sales_order_item_id` pada `delivery_items`
+  - [ ] **Controller**: Logic `createDelivery` & `confirmDelivery` mendukung multi-SO untuk customer & warehouse yang sama, alokasi sisa item per SO, dan pembaruan status SO terkait
+  - [ ] **Dashboard**: Dialog Buat Surat Jalan dengan pemilihan Customer dan multi-select Sales Order aktif
+- [ ] **Multi-DO dalam 1 Invoice**:
+  - [ ] **Database**: Migrasi tabel junction `invoice_deliveries (invoice_id, delivery_id)`
+  - [ ] **Controller**: Logic `createInvoice` mengonsolidasi multiple DO terkonfirmasi dan mencegah double-invoicing
+  - [ ] **Dashboard**: Dialog Terbitkan Faktur dengan multi-select DO terkonfirmasi milik customer
+- [ ] **Perbaikan Sumber Harga Faktur (Inherit Order Price)**:
+  - [ ] **Controller**: Pembentukan baris `invoice_items` mengunci dan mewarisi `unit_price`, diskon, dan pajak langsung dari `sales_order_items.unit_price`, bukan dari `products.selling_price`
+- [ ] **SKU Produk & Kategori**:
+  - [ ] **Dashboard**: Tombol "Generate Code" pada input SKU formulir produk (auto `PRD-YYYY-XXXX`)
+  - [ ] **Controller**: Auto-generate kode kategori (`CAT-001`, `CAT-002`, dst) di backend jika field `code` dikosongkan pada request tambah kategori
+  - [ ] **Dashboard**: Form kategori membuat input kode bersifat opsional (tanpa tombol generate)
+- [ ] **Harga Modal Produk (`cost_price`)**:
+  - [ ] **Database**: Migrasi penambahan kolom `cost_price` pada tabel `products`
+  - [ ] **Controller**: Penanganan `cost_price` pada model, validator, repository, dan kalkulasi valuasi stok
+  - [ ] **Dashboard**: Input Harga Modal / HPP pada modal tambah/edit produk
+- [ ] **Penyesuaian Ukuran Cetak Dot Matrix**:
+  - [ ] **Dashboard**: Dropdown pemilih ukuran kertas continuous form (Half-Letter 210x140mm vs Full Page 210x280mm), margin print presisi, dan densitas karakter pada dialog cetak Surat Jalan
+- [ ] **Bulk Import Produk via Excel / CSV**:
+  - [ ] Menunggu format template resmi dari pengguna
+  - [ ] **Controller**: Endpoint batch insert dan validasi file `POST /primary/v1/products/bulk-import`
+  - [ ] **Dashboard**: Modal upload template, preview data tabel validasi, dan tombol aksi import massal
+- [ ] **Penyimpanan Draf pada Modal Create**:
+  - [ ] **Dashboard**: Hook utilitas `useFormDraft` berbasis `localStorage` pada formulir Quotation, SO, DO, Invoice, dan Produk dengan alert banner pulihkan draf
+- [ ] **Counter Customer Total Purchase**:
+  - [ ] **Controller**: Penambahan perhitungan agregat `order_count` dan `lifetime_spend` pada data response customer
+  - [ ] **Dashboard**: Kolom Total Order & Akumulasi Belanja pada tabel Customer dan kartu overview
+- [ ] **Granular Delete Permissions**:
+  - [ ] **Database & Seeder**: Master permissions baru (`*.delete`) untuk setiap modul dan mapping hak akses ke Superadmin
+  - [ ] **Dashboard**: Permission guard untuk menyembunyikan tombol/menu Hapus jika pengguna tidak memiliki izin `.delete`
+
