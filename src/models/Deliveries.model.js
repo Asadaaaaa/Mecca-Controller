@@ -17,7 +17,7 @@ class DeliveriesModel {
       },
       sales_order_id: {
         type: DataTypes.BIGINT,
-        allowNull: false
+        allowNull: true
       },
       warehouse_id: {
         type: DataTypes.BIGINT,

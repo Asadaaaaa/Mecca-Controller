@@ -33,6 +33,14 @@ class InvoiceRepository {
         return this.server.model?.users?.table;
     }
 
+    get invoiceDeliveriesTable() {
+        return this.server.model?.invoiceDeliveries?.table;
+    }
+
+    get salesOrderItemTable() {
+        return this.server.model?.salesOrderItems?.table;
+    }
+
     async findInvoices({ search = '', status = '', customer_id = null, sort = 'invoice_date', order = 'DESC', page = 1, limit = 10 } = {}) {
         if (!this.invoiceTable) return { count: 0, rows: [] };
 
@@ -93,6 +101,11 @@ class InvoiceRepository {
                     attributes: ['id', 'delivery_number', 'delivery_date', 'status']
                 },
                 {
+                    model: this.deliveryTable,
+                    as: 'deliveries',
+                    attributes: ['id', 'delivery_number', 'delivery_date', 'status']
+                },
+                {
                     model: this.salesOrderTable,
                     as: 'salesOrder',
                     attributes: ['id', 'sales_order_number', 'order_date']
@@ -110,6 +123,16 @@ class InvoiceRepository {
                             model: this.productTable,
                             as: 'product',
                             attributes: ['id', 'code', 'name', 'selling_price']
+                        },
+                        {
+                            model: this.deliveryTable,
+                            as: 'delivery',
+                            attributes: ['id', 'delivery_number']
+                        },
+                        {
+                            model: this.salesOrderTable,
+                            as: 'salesOrder',
+                            attributes: ['id', 'sales_order_number']
                         }
                     ]
                 }
@@ -134,6 +157,11 @@ class InvoiceRepository {
                     as: 'delivery'
                 },
                 {
+                    model: this.deliveryTable,
+                    as: 'deliveries',
+                    attributes: ['id', 'delivery_number', 'delivery_date', 'status']
+                },
+                {
                     model: this.salesOrderTable,
                     as: 'salesOrder'
                 },
@@ -153,12 +181,22 @@ class InvoiceRepository {
                         {
                             model: this.deliveryTable,
                             as: 'delivery'
+                        },
+                        {
+                            model: this.salesOrderTable,
+                            as: 'salesOrder',
+                            attributes: ['id', 'sales_order_number']
                         }
                     ]
                 }
             ],
             transaction
         });
+    }
+
+    async createInvoiceDeliveries(entries, transaction = null) {
+        if (!this.invoiceDeliveriesTable || !entries || entries.length === 0) return [];
+        return await this.invoiceDeliveriesTable.bulkCreate(entries, { transaction });
     }
 
     async createInvoice(data, transaction = null) {

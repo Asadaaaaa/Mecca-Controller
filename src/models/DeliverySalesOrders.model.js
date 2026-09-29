@@ -1,9 +1,9 @@
 import { DataTypes } from "sequelize";
 
-class DeliveryItemsModel {
+class DeliverySalesOrdersModel {
   constructor(server, db = null) {
     const database = db || server.model.db;
-    const table = database.define('delivery_items', {
+    const table = database.define('delivery_sales_orders', {
       id: {
         type: DataTypes.BIGINT,
         allowNull: false,
@@ -16,20 +16,7 @@ class DeliveryItemsModel {
       },
       sales_order_id: {
         type: DataTypes.BIGINT,
-        allowNull: true
-      },
-      sales_order_item_id: {
-        type: DataTypes.BIGINT,
         allowNull: false
-      },
-      product_id: {
-        type: DataTypes.BIGINT,
-        allowNull: false
-      },
-      quantity: {
-        type: DataTypes.DECIMAL(12, 2),
-        allowNull: false,
-        defaultValue: 1
       },
       created_at: {
         type: DataTypes.DATE,
@@ -42,7 +29,7 @@ class DeliveryItemsModel {
         defaultValue: DataTypes.NOW
       }
     }, {
-      tableName: 'delivery_items',
+      tableName: 'delivery_sales_orders',
       timestamps: true,
       createdAt: 'created_at',
       updatedAt: 'updated_at'
@@ -52,4 +39,4 @@ class DeliveryItemsModel {
   }
 }
 
-export default DeliveryItemsModel;
+export default DeliverySalesOrdersModel;

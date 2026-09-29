@@ -27,6 +27,11 @@ class ProductsModel {
         type: DataTypes.BIGINT,
         allowNull: false
       },
+      cost_price: {
+        type: DataTypes.DECIMAL(15, 2),
+        allowNull: false,
+        defaultValue: 0
+      },
       selling_price: {
         type: DataTypes.DECIMAL(15, 2),
         allowNull: false,

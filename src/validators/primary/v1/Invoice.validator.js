@@ -5,6 +5,10 @@ class InvoiceValidator {
             "invoice_number": { "type": "string" },
             "customer_id": { "type": ["integer", "null"] },
             "delivery_id": { "type": ["integer", "null"] },
+            "delivery_ids": {
+                "type": "array",
+                "items": { "type": "integer" }
+            },
             "sales_order_id": { "type": ["integer", "null"] },
             "invoice_date": { "type": "string" },
             "due_date": { "type": "string" },
@@ -20,6 +24,9 @@ class InvoiceValidator {
                     "properties": {
                         "product_id": { "type": "integer" },
                         "delivery_id": { "type": ["integer", "null"] },
+                        "delivery_item_id": { "type": ["integer", "null"] },
+                        "sales_order_id": { "type": ["integer", "null"] },
+                        "sales_order_item_id": { "type": ["integer", "null"] },
                         "quantity": { "type": "number", "minimum": 0.01 },
                         "unit_price": { "type": "number", "minimum": 0 },
                         "discount_amount": { "type": "number" },

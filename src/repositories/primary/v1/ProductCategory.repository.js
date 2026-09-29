@@ -111,9 +111,14 @@ class ProductCategoryRepository {
 
     async generateNextCode() {
         if (!this.table) return 'CAT-001';
-        const count = await this.table.count();
-        const nextNum = (count + 1).toString().padStart(3, '0');
-        return `CAT-${nextNum}`;
+        let count = await this.table.count();
+        let nextNum = count + 1;
+        let code = `CAT-${nextNum.toString().padStart(3, '0')}`;
+        while (await this.findByCode(code)) {
+            nextNum++;
+            code = `CAT-${nextNum.toString().padStart(3, '0')}`;
+        }
+        return code;
     }
 
     async create(data) {

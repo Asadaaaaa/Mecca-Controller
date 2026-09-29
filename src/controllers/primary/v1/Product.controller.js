@@ -130,6 +130,26 @@ class ProductController {
             return res.status(500).json(this.ResponsePreset.resErr(500, error.message, 'server', { code: -1 }));
         }
     }
+
+    async generateSku(req, res) {
+        try {
+            const sku = await this.ProductService.generateSku();
+            return res.status(200).json(this.ResponsePreset.resOK('SKU generated successfully', { sku }));
+        } catch (error) {
+            this.server.sendLogs(error);
+            return res.status(500).json(this.ResponsePreset.resErr(500, error.message, 'server', { code: -1 }));
+        }
+    }
+
+    async bulkImport(req, res) {
+        try {
+            const result = await this.ProductService.bulkImport(req.body);
+            return res.status(200).json(this.ResponsePreset.resOK('Bulk import processed successfully', result));
+        } catch (error) {
+            this.server.sendLogs(error);
+            return res.status(400).json(this.ResponsePreset.resErr(400, error.message, 'bulk-import', { code: -1 }));
+        }
+    }
 }
 
 export default ProductController;

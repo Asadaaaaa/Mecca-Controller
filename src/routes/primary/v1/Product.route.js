@@ -18,6 +18,12 @@ class ProductRoute {
         // Metrics endpoint (must be declared before :id route)
         this.API.get(this.endpointPrefix + '/metrics', auth, (req, res) => this.ProductController.metrics(req, res));
 
+        // Generate SKU endpoint
+        this.API.get(this.endpointPrefix + '/generate-sku', auth, (req, res) => this.ProductController.generateSku(req, res));
+
+        // Bulk import endpoint
+        this.API.post(this.endpointPrefix + '/bulk-import', auth, (req, res) => this.ProductController.bulkImport(req, res));
+
         // Batch delete endpoint
         this.API.post(this.endpointPrefix + '/batch-delete', auth, (req, res) => this.ProductController.batchDelete(req, res));
 

@@ -18,6 +18,18 @@ class InvoiceItemsModel {
         type: DataTypes.BIGINT,
         allowNull: true
       },
+      delivery_item_id: {
+        type: DataTypes.BIGINT,
+        allowNull: true
+      },
+      sales_order_id: {
+        type: DataTypes.BIGINT,
+        allowNull: true
+      },
+      sales_order_item_id: {
+        type: DataTypes.BIGINT,
+        allowNull: true
+      },
       product_id: {
         type: DataTypes.BIGINT,
         allowNull: false

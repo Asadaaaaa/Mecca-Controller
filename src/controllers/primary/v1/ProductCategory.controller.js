@@ -48,6 +48,9 @@ class ProductCategoryController {
 
     async create(req, res) {
         try {
+            if (req.body.code !== undefined && (req.body.code === null || req.body.code.trim() === '')) {
+                delete req.body.code;
+            }
             const schemeValidate = this.Ajv.compile(this.DataScheme.create);
             if (!schemeValidate(req.body)) {
                 return res.status(400).json(this.ResponsePreset.resErr(

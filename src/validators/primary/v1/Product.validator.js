@@ -18,6 +18,10 @@ class ProductValidator {
             "unit_id": {
                 "type": "integer"
             },
+            "cost_price": {
+                "type": "number",
+                "minimum": 0
+            },
             "selling_price": {
                 "type": "number",
                 "minimum": 0
@@ -55,6 +59,10 @@ class ProductValidator {
             },
             "unit_id": {
                 "type": "integer"
+            },
+            "cost_price": {
+                "type": "number",
+                "minimum": 0
             },
             "selling_price": {
                 "type": "number",

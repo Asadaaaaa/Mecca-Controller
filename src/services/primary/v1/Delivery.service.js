@@ -46,12 +46,16 @@ class DeliveryService {
 
         const items = result.rows.map(d => {
             const totalItems = d.items ? d.items.reduce((sum, item) => sum + (parseFloat(item.quantity) || 0), 0) : 0;
+            const soNumbers = d.salesOrders && d.salesOrders.length > 0
+                ? d.salesOrders.map(s => s.sales_order_number).join(', ')
+                : (d.salesOrder?.sales_order_number || '-');
 
             return {
                 id: d.id,
                 deliveryNo: d.delivery_number,
-                refOrder: d.salesOrder?.sales_order_number || '-',
+                refOrder: soNumbers,
                 sales_order_id: d.sales_order_id,
+                sales_orders: d.salesOrders || (d.salesOrder ? [d.salesOrder] : []),
                 date: d.delivery_date,
                 customer_id: d.customer_id,
                 customerName: d.customer?.name || '-',
@@ -65,6 +69,8 @@ class DeliveryService {
                 creator: d.creator?.name || '-',
                 items: d.items ? d.items.map(item => ({
                     id: item.id,
+                    sales_order_id: item.sales_order_id,
+                    sales_order_number: item.salesOrder?.sales_order_number || '-',
                     sales_order_item_id: item.sales_order_item_id,
                     product_id: item.product_id,
                     productCode: item.product?.code || '-',
@@ -96,12 +102,16 @@ class DeliveryService {
         if (!d) return null;
 
         const totalItems = d.items ? d.items.reduce((sum, item) => sum + (parseFloat(item.quantity) || 0), 0) : 0;
+        const soNumbers = d.salesOrders && d.salesOrders.length > 0
+            ? d.salesOrders.map(s => s.sales_order_number).join(', ')
+            : (d.salesOrder?.sales_order_number || '-');
 
         return {
             id: d.id,
             deliveryNo: d.delivery_number,
-            refOrder: d.salesOrder?.sales_order_number || '-',
+            refOrder: soNumbers,
             sales_order_id: d.sales_order_id,
+            sales_orders: d.salesOrders || (d.salesOrder ? [d.salesOrder] : []),
             salesOrder: d.salesOrder,
             date: d.delivery_date,
             customer_id: d.customer_id,
@@ -118,6 +128,8 @@ class DeliveryService {
             creator: d.creator,
             items: d.items ? d.items.map(item => ({
                 id: item.id,
+                sales_order_id: item.sales_order_id,
+                sales_order_number: item.salesOrder?.sales_order_number || '-',
                 sales_order_item_id: item.sales_order_item_id,
                 product_id: item.product_id,
                 product: item.product,
@@ -130,23 +142,56 @@ class DeliveryService {
 
     async createDelivery(data, user = null) {
         return await this.server.model.db.transaction(async (t) => {
-            const salesOrder = await this.salesOrderRepo.findSalesOrderById(data.sales_order_id, t);
-            if (!salesOrder) return -1; // Sales Order not found
+            const soIds = Array.isArray(data.sales_order_ids) && data.sales_order_ids.length > 0
+                ? data.sales_order_ids.map(Number)
+                : (data.sales_order_id ? [parseInt(data.sales_order_id, 10)] : []);
 
-            const warehouse_id = data.warehouse_id || salesOrder.warehouse_id || 1;
-            const customer_id = salesOrder.customer_id;
+            if (soIds.length === 0) {
+                return -1; // Sales Order not specified
+            }
+
+            const salesOrders = [];
+            for (const soId of soIds) {
+                const so = await this.salesOrderRepo.findSalesOrderById(soId, t);
+                if (!so) return -1; // Sales Order not found
+                salesOrders.push(so);
+            }
+
+            const firstCustId = salesOrders[0].customer_id;
+            const mismatchedCust = salesOrders.some(so => so.customer_id !== firstCustId);
+            if (mismatchedCust) {
+                return {
+                    error: 'MISMATCHED_CUSTOMER',
+                    message: 'Semua Sales Order yang digabungkan harus milik pelanggan yang sama.'
+                };
+            }
+
+            const firstWhId = data.warehouse_id || salesOrders[0].warehouse_id || 1;
+            const mismatchedWh = salesOrders.some(so => so.warehouse_id && so.warehouse_id !== firstWhId);
+            if (mismatchedWh) {
+                return {
+                    error: 'MISMATCHED_WAREHOUSE',
+                    message: 'Semua Sales Order yang digabungkan harus berasal dari gudang yang sama.'
+                };
+            }
+
+            const warehouse_id = firstWhId;
+            const customer_id = firstCustId;
             const delivery_number = data.delivery_number || await this.generateDeliveryNumber(data.delivery_date || new Date());
 
-            // Validate item quantities against SO remaining quantities
+            // Build map of all SO items across selected SOs
             const soItemMap = {};
-            if (salesOrder.items) {
-                salesOrder.items.forEach(soItem => {
-                    soItemMap[soItem.id] = {
-                        ordered: parseFloat(soItem.quantity) || 0,
-                        delivered: parseFloat(soItem.delivered_quantity) || 0,
-                        product_id: soItem.product_id
-                    };
-                });
+            for (const so of salesOrders) {
+                if (so.items) {
+                    so.items.forEach(soItem => {
+                        soItemMap[soItem.id] = {
+                            ordered: parseFloat(soItem.quantity) || 0,
+                            delivered: parseFloat(soItem.delivered_quantity) || 0,
+                            product_id: soItem.product_id,
+                            sales_order_id: so.id
+                        };
+                    });
+                }
             }
 
             const itemsToCreate = [];
@@ -155,10 +200,12 @@ class DeliveryService {
                 const qty = parseFloat(item.quantity) || 0;
                 if (qty <= 0) continue;
 
-                const productId = soItemMap[soItemId]?.product_id || item.product_id;
+                const matchedSoItem = soItemMap[soItemId];
+                const productId = matchedSoItem?.product_id || item.product_id;
+                const itemSoId = item.sales_order_id || matchedSoItem?.sales_order_id || soIds[0];
 
-                if (soItemMap[soItemId]) {
-                    const remaining = soItemMap[soItemId].ordered - soItemMap[soItemId].delivered;
+                if (matchedSoItem) {
+                    const remaining = matchedSoItem.ordered - matchedSoItem.delivered;
                     if (qty > remaining) {
                         return -2; // Quantity exceeds remaining SO quantity
                     }
@@ -183,6 +230,7 @@ class DeliveryService {
                 }
 
                 itemsToCreate.push({
+                    sales_order_id: itemSoId,
                     sales_order_item_id: soItemId || null,
                     product_id: productId,
                     quantity: qty
@@ -195,7 +243,7 @@ class DeliveryService {
 
             const delivery = await this.deliveryRepo.createDelivery({
                 delivery_number,
-                sales_order_id: salesOrder.id,
+                sales_order_id: soIds[0] || null,
                 warehouse_id,
                 customer_id,
                 delivery_date: data.delivery_date || new Date().toISOString().slice(0, 10),
@@ -205,6 +253,13 @@ class DeliveryService {
                 notes: data.notes || null,
                 created_by: user?.id || null
             }, t);
+
+            // Record in delivery_sales_orders junction table
+            const junctionEntries = soIds.map(soId => ({
+                delivery_id: delivery.id,
+                sales_order_id: soId
+            }));
+            await this.deliveryRepo.createDeliverySalesOrders(junctionEntries, t);
 
             const preparedItems = itemsToCreate.map(item => ({
                 ...item,
@@ -280,9 +335,20 @@ class DeliveryService {
             // 3. Update Delivery status to 'Dalam Perjalanan'
             await delivery.update({ status: 'Dalam Perjalanan' }, { transaction: t });
 
-            // 4. Update Sales Order status
-            if (delivery.sales_order_id) {
-                const freshSO = await this.salesOrderRepo.findSalesOrderById(delivery.sales_order_id, t);
+            // 4. Update Sales Order status for all associated SOs
+            const associatedSoIds = new Set();
+            if (delivery.sales_order_id) associatedSoIds.add(delivery.sales_order_id);
+            if (delivery.salesOrders && delivery.salesOrders.length > 0) {
+                delivery.salesOrders.forEach(so => associatedSoIds.add(so.id));
+            }
+            if (delivery.items) {
+                delivery.items.forEach(item => {
+                    if (item.sales_order_id) associatedSoIds.add(item.sales_order_id);
+                });
+            }
+
+            for (const soId of Array.from(associatedSoIds)) {
+                const freshSO = await this.salesOrderRepo.findSalesOrderById(soId, t);
                 if (freshSO && freshSO.items) {
                     let allDelivered = true;
                     let anyDelivered = false;

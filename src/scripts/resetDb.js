@@ -38,8 +38,10 @@ async function resetDatabase() {
       'payment_allocations',
       'payments',
       'invoice_items',
+      'invoice_deliveries',
       'invoices',
       'delivery_items',
+      'delivery_sales_orders',
       'deliveries',
       'sales_order_items',
       'sales_orders',
@@ -73,8 +75,12 @@ async function resetDatabase() {
     const [existingProd] = await sequelize.query('SELECT id FROM `products` WHERE `id` = 1;');
     if (existingProd.length === 0) {
       await sequelize.query(
-        'INSERT INTO `products` (`id`, `code`, `name`, `category_id`, `unit_id`, `selling_price`, `tax_id`, `status`, `created_at`, `updated_at`) VALUES (1, "PRD-001", "Barcode Scanner Wireless 2D", 1, 1, 850000.00, 1, "active", ?, ?);',
+        'INSERT INTO `products` (`id`, `code`, `name`, `category_id`, `unit_id`, `cost_price`, `selling_price`, `tax_id`, `status`, `created_at`, `updated_at`) VALUES (1, "PRD-001", "Barcode Scanner Wireless 2D", 1, 1, 600000.00, 850000.00, 1, "active", ?, ?);',
         { replacements: [now, now] }
+      );
+    } else {
+      await sequelize.query(
+        'UPDATE `products` SET `cost_price` = 600000.00 WHERE `id` = 1;'
       );
     }
 

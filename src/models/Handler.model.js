@@ -22,8 +22,10 @@ import SalesOrdersModel from "./SalesOrders.model.js";
 import SalesOrderItemsModel from "./SalesOrderItems.model.js";
 import DeliveriesModel from "./Deliveries.model.js";
 import DeliveryItemsModel from "./DeliveryItems.model.js";
+import DeliverySalesOrdersModel from "./DeliverySalesOrders.model.js";
 import InvoicesModel from "./Invoices.model.js";
 import InvoiceItemsModel from "./InvoiceItems.model.js";
+import InvoiceDeliveriesModel from "./InvoiceDeliveries.model.js";
 import PaymentsModel from "./Payments.model.js";
 import PaymentAllocationsModel from "./PaymentAllocations.model.js";
 import SystemSettingsModel from "./SystemSettings.model.js";
@@ -78,8 +80,10 @@ class Handler {
         this.salesOrderItems = new SalesOrderItemsModel(this.server, this.db);
         this.deliveries = new DeliveriesModel(this.server, this.db);
         this.deliveryItems = new DeliveryItemsModel(this.server, this.db);
+        this.deliverySalesOrders = new DeliverySalesOrdersModel(this.server, this.db);
         this.invoices = new InvoicesModel(this.server, this.db);
         this.invoiceItems = new InvoiceItemsModel(this.server, this.db);
+        this.invoiceDeliveries = new InvoiceDeliveriesModel(this.server, this.db);
         this.payments = new PaymentsModel(this.server, this.db);
         this.paymentAllocations = new PaymentAllocationsModel(this.server, this.db);
         this.systemSettings = new SystemSettingsModel(this.server, this.db);
@@ -271,6 +275,18 @@ class Handler {
             foreignKey: 'sales_order_id',
             as: 'salesOrder'
         });
+        this.deliveries.table.belongsToMany(this.salesOrders.table, {
+            through: this.deliverySalesOrders.table,
+            foreignKey: 'delivery_id',
+            otherKey: 'sales_order_id',
+            as: 'salesOrders'
+        });
+        this.salesOrders.table.belongsToMany(this.deliveries.table, {
+            through: this.deliverySalesOrders.table,
+            foreignKey: 'sales_order_id',
+            otherKey: 'delivery_id',
+            as: 'consolidatedDeliveries'
+        });
         this.deliveries.table.belongsTo(this.warehouses.table, {
             foreignKey: 'warehouse_id',
             as: 'warehouse'
@@ -291,6 +307,10 @@ class Handler {
             foreignKey: 'delivery_id',
             as: 'delivery'
         });
+        this.deliveryItems.table.belongsTo(this.salesOrders.table, {
+            foreignKey: 'sales_order_id',
+            as: 'salesOrder'
+        });
         this.deliveryItems.table.belongsTo(this.salesOrderItems.table, {
             foreignKey: 'sales_order_item_id',
             as: 'salesOrderItem'
@@ -308,6 +328,18 @@ class Handler {
         this.invoices.table.belongsTo(this.deliveries.table, {
             foreignKey: 'delivery_id',
             as: 'delivery'
+        });
+        this.invoices.table.belongsToMany(this.deliveries.table, {
+            through: this.invoiceDeliveries.table,
+            foreignKey: 'invoice_id',
+            otherKey: 'delivery_id',
+            as: 'deliveries'
+        });
+        this.deliveries.table.belongsToMany(this.invoices.table, {
+            through: this.invoiceDeliveries.table,
+            foreignKey: 'delivery_id',
+            otherKey: 'invoice_id',
+            as: 'invoices'
         });
         this.invoices.table.belongsTo(this.salesOrders.table, {
             foreignKey: 'sales_order_id',
@@ -328,6 +360,18 @@ class Handler {
         this.invoiceItems.table.belongsTo(this.deliveries.table, {
             foreignKey: 'delivery_id',
             as: 'delivery'
+        });
+        this.invoiceItems.table.belongsTo(this.deliveryItems.table, {
+            foreignKey: 'delivery_item_id',
+            as: 'deliveryItem'
+        });
+        this.invoiceItems.table.belongsTo(this.salesOrders.table, {
+            foreignKey: 'sales_order_id',
+            as: 'salesOrder'
+        });
+        this.invoiceItems.table.belongsTo(this.salesOrderItems.table, {
+            foreignKey: 'sales_order_item_id',
+            as: 'salesOrderItem'
         });
         this.invoiceItems.table.belongsTo(this.products.table, {
             foreignKey: 'product_id',

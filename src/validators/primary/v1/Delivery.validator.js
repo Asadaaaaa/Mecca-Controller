@@ -3,7 +3,12 @@ class DeliveryValidator {
         "type": "object",
         "properties": {
             "delivery_number": { "type": "string" },
-            "sales_order_id": { "type": "integer" },
+            "sales_order_id": { "type": ["integer", "null"] },
+            "sales_order_ids": {
+                "type": "array",
+                "items": { "type": "integer" }
+            },
+            "customer_id": { "type": ["integer", "null"] },
             "warehouse_id": { "type": ["integer", "null"] },
             "delivery_date": { "type": "string" },
             "courier_fleet": { "type": ["string", "null"] },
@@ -15,7 +20,8 @@ class DeliveryValidator {
                 "items": {
                     "type": "object",
                     "properties": {
-                        "sales_order_item_id": { "type": "integer" },
+                        "sales_order_id": { "type": ["integer", "null"] },
+                        "sales_order_item_id": { "type": ["integer", "null"] },
                         "product_id": { "type": "integer" },
                         "quantity": { "type": "number", "minimum": 0.01 }
                     },
@@ -24,7 +30,7 @@ class DeliveryValidator {
                 "minItems": 1
             }
         },
-        "required": ["sales_order_id", "items"],
+        "required": ["items"],
         "additionalProperties": false
     };
 

@@ -17,6 +17,10 @@ class DeliveryRepository {
         return this.server.model?.salesOrders?.table;
     }
 
+    get deliverySalesOrdersTable() {
+        return this.server.model?.deliverySalesOrders?.table;
+    }
+
     get salesOrderItemTable() {
         return this.server.model?.salesOrderItems?.table;
     }
@@ -91,6 +95,11 @@ class DeliveryRepository {
                     attributes: ['id', 'sales_order_number', 'order_date', 'status']
                 },
                 {
+                    model: this.salesOrderTable,
+                    as: 'salesOrders',
+                    attributes: ['id', 'sales_order_number', 'order_date', 'status']
+                },
+                {
                     model: this.warehouseTable,
                     as: 'warehouse',
                     attributes: ['id', 'code', 'name']
@@ -113,6 +122,11 @@ class DeliveryRepository {
                             model: this.salesOrderItemTable,
                             as: 'salesOrderItem',
                             attributes: ['id', 'quantity', 'delivered_quantity']
+                        },
+                        {
+                            model: this.salesOrderTable,
+                            as: 'salesOrder',
+                            attributes: ['id', 'sales_order_number']
                         }
                     ]
                 }
@@ -143,6 +157,11 @@ class DeliveryRepository {
                     ]
                 },
                 {
+                    model: this.salesOrderTable,
+                    as: 'salesOrders',
+                    attributes: ['id', 'sales_order_number', 'order_date', 'status']
+                },
+                {
                     model: this.warehouseTable,
                     as: 'warehouse'
                 },
@@ -162,12 +181,22 @@ class DeliveryRepository {
                         {
                             model: this.salesOrderItemTable,
                             as: 'salesOrderItem'
+                        },
+                        {
+                            model: this.salesOrderTable,
+                            as: 'salesOrder',
+                            attributes: ['id', 'sales_order_number']
                         }
                     ]
                 }
             ],
             transaction
         });
+    }
+
+    async createDeliverySalesOrders(entries, transaction = null) {
+        if (!this.deliverySalesOrdersTable || !entries || entries.length === 0) return [];
+        return await this.deliverySalesOrdersTable.bulkCreate(entries, { transaction });
     }
 
     async findDeliveryByNumber(delivery_number, transaction = null) {

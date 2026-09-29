@@ -37,20 +37,52 @@ class CustomerRepository {
             offset
         });
 
-        // Attach transaction-derived metrics (will be calculated from sales/invoices tables in Phase 5-8)
-        const items = rows.map(r => {
+        const salesOrderTable = this.server.model?.salesOrders?.table;
+        const invoiceTable = this.server.model?.invoices?.table;
+
+        // Attach transaction-derived metrics
+        const items = await Promise.all(rows.map(async (r) => {
             const data = r.toJSON();
+            let orderCount = 0;
+            let lifetimeSpend = 0;
+            let totalUnpaid = 0;
+
+            if (salesOrderTable) {
+                orderCount = await salesOrderTable.count({
+                    where: {
+                        customer_id: data.id,
+                        status: { [Op.notIn]: ['Dibatalkan', 'DRAFT'] }
+                    }
+                });
+            }
+
+            if (invoiceTable) {
+                const invoices = await invoiceTable.findAll({
+                    where: {
+                        customer_id: data.id,
+                        status: { [Op.ne]: 'Dibatalkan' }
+                    },
+                    attributes: ['grand_total', 'paid_amount', 'status']
+                });
+
+                for (const inv of invoices) {
+                    const grand = parseFloat(inv.grand_total) || 0;
+                    const paid = parseFloat(inv.paid_amount) || 0;
+                    lifetimeSpend += paid;
+                    if (inv.status !== 'Lunas') {
+                        totalUnpaid += Math.max(0, grand - paid);
+                    }
+                }
+            }
+
             return {
                 ...data,
-                affiliate: '-',
-                date_of_birth: null,
-                first_visit: null,
-                recent_visit: null,
-                lifetime_spend: 0,
-                total_unpaid: 0,
+                order_count: orderCount,
+                lifetime_spend: lifetimeSpend,
+                total_unpaid: totalUnpaid,
                 status: 'active'
             };
-        });
+        }));
 
         return {
             count,
@@ -63,14 +95,47 @@ class CustomerRepository {
         const customer = await this.table.findByPk(id);
         if (!customer) return null;
         const data = customer.toJSON();
+
+        const salesOrderTable = this.server.model?.salesOrders?.table;
+        const invoiceTable = this.server.model?.invoices?.table;
+
+        let orderCount = 0;
+        let lifetimeSpend = 0;
+        let totalUnpaid = 0;
+
+        if (salesOrderTable) {
+            orderCount = await salesOrderTable.count({
+                where: {
+                    customer_id: data.id,
+                    status: { [Op.notIn]: ['Dibatalkan', 'DRAFT'] }
+                }
+            });
+        }
+
+        if (invoiceTable) {
+            const invoices = await invoiceTable.findAll({
+                where: {
+                    customer_id: data.id,
+                    status: { [Op.ne]: 'Dibatalkan' }
+                },
+                attributes: ['grand_total', 'paid_amount', 'status']
+            });
+
+            for (const inv of invoices) {
+                const grand = parseFloat(inv.grand_total) || 0;
+                const paid = parseFloat(inv.paid_amount) || 0;
+                lifetimeSpend += paid;
+                if (inv.status !== 'Lunas') {
+                    totalUnpaid += Math.max(0, grand - paid);
+                }
+            }
+        }
+
         return {
             ...data,
-            affiliate: '-',
-            date_of_birth: null,
-            first_visit: null,
-            recent_visit: null,
-            lifetime_spend: 0,
-            total_unpaid: 0,
+            order_count: orderCount,
+            lifetime_spend: lifetimeSpend,
+            total_unpaid: totalUnpaid,
             status: 'active'
         };
     }
