@@ -75,7 +75,8 @@ class DeliveryService {
                     product_id: item.product_id,
                     productCode: item.product?.code || '-',
                     productName: item.product?.name || '-',
-                    quantity: parseFloat(item.quantity) || 0
+                    quantity: parseFloat(item.quantity) || 0,
+                    unit_price: item.salesOrderItem ? parseFloat(item.salesOrderItem.unit_price) : parseFloat(item.product?.selling_price || 0)
                 })) : [],
                 created_at: d.created_at,
                 updated_at: d.updated_at
@@ -135,7 +136,8 @@ class DeliveryService {
                 product: item.product,
                 quantity: parseFloat(item.quantity) || 0,
                 so_quantity: item.salesOrderItem ? parseFloat(item.salesOrderItem.quantity) : 0,
-                so_delivered_quantity: item.salesOrderItem ? parseFloat(item.salesOrderItem.delivered_quantity) : 0
+                so_delivered_quantity: item.salesOrderItem ? parseFloat(item.salesOrderItem.delivered_quantity) : 0,
+                unit_price: item.salesOrderItem ? parseFloat(item.salesOrderItem.unit_price) : parseFloat(item.product?.selling_price || 0)
             })) : []
         };
     }

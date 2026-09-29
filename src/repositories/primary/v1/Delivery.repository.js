@@ -121,7 +121,7 @@ class DeliveryRepository {
                         {
                             model: this.salesOrderItemTable,
                             as: 'salesOrderItem',
-                            attributes: ['id', 'quantity', 'delivered_quantity']
+                            attributes: ['id', 'quantity', 'delivered_quantity', 'unit_price']
                         },
                         {
                             model: this.salesOrderTable,
