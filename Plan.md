@@ -288,9 +288,18 @@ updated_at          TIMESTAMP
 3. **Kode Kategori (Manual & Auto-Generate di Backend)**:
    - Pengguna dapat mengisi kode kategori secara manual.
    - Jika field input kode kategori **dikosongkan**, maka Backend (BE) akan secara otomatis men-generate kode urut (`CAT-001`, `CAT-002`, dst). Tanpa memerlukan tombol klik generate di UI.
-4. **Bulk Import Produk**:
-   - Disediakan modul bulk import produk massal via upload file spreadsheet (Excel `.xlsx` / `.csv`).
-   - Format template import standar akan disediakan oleh pengguna untuk memuat field: Kode, Nama, Kategori, Satuan, Harga Modal, Harga Jual, PPN, dan Stok Minimum.
+4. **Bulk Import Produk via Excel (`daftar-stok.xlsx`)**:
+   - Disediakan modul bulk import produk massal via upload file spreadsheet (Excel `.xlsx` / `.csv`) mengacu pada template resmi `Mecca-Controller/#example/daftar-stok.xlsx`.
+   - Header data berada pada Baris 12 (Data dimulai dari Baris 13):
+     - Kolom B: `SKU` $\rightarrow$ Kode Produk (`products.code`).
+     - Kolom C: `Nama` beserta Kolom D/E (`Nama Varian 1` & `Pilihan Varian 1`) $\rightarrow$ Nama Produk (`products.name`). Jika memiliki varian, digabung: `Nama - Pilihan Varian 1`.
+     - Kolom H: `Jenis` (`Produk` / `Bahan Baku`) $\rightarrow$ Kategori Produk (`product_categories.name`), didaftarkan otomatis jika belum ada.
+     - Kolom L: `Akhir` $\rightarrow$ Saldo kuantitas stok fisik awal di gudang (`warehouse_stocks.quantity`), dengan validasi $\ge 0$ (nilai negatif diset 0 untuk mematuhi guardrail anti-minus).
+     - Kolom M: `Satuan` $\rightarrow$ Satuan Produk (`units.code`) dengan **aturan normalisasi mutlak**:
+       - Satuan tertulis **`"box"`** maupun **`"boks"`** (case-insensitive) **wajib disimpan di database tetap sebagai `BOX`**.
+       - Satuan tertulis **`"pcs"`**, **`"Pcs"`**, **`"Pieces"`** disimpan tetap sebagai **`PCS`**.
+       - Satuan lain (e.g. `Batang`, `Botol`, `Gram`, `Kg`, `Lembar`, `Pack`, `Roll`, `Sak`, `Set`, dll) otomatis didaftarkan ke tabel `units` jika belum ada.
+     - Kolom harga (`selling_price` & `cost_price`) diset default `0` karena format daftar stok berfokus pada persediaan fisik.
 
 ---
 
@@ -1101,10 +1110,12 @@ Delivery: DO-001        Delivery: DO-002
   - Frontend: Input Harga Modal / HPP pada dialog produk.
 - [ ] **Penyesuaian Ukuran Cetak Dot Matrix**:
   - Frontend: Dropdown pilihan ukuran kertas continuous form pada dialog preview cetak DO: Half-Letter (210mm × 140mm) dan Full Page (210mm × 280mm), beserta penyesuaian margin dan densitas karakter cetak jarum.
-- [ ] **Bulk Import Produk via Excel / CSV**:
-  - Arsitektur backend & frontend siap menerima format template resmi dari pengguna.
-  - Backend: Endpoint validasi dan batch insert produk `POST /primary/v1/products/bulk-import`.
-  - Frontend: Modal upload file spreadsheet, preview data valid/error, dan tombol eksekusi import massal.
+- [ ] **Bulk Import Produk via Excel (`daftar-stok.xlsx`)**:
+  - Mengadopsi format resmi `Mecca-Controller/#example/daftar-stok.xlsx` (Header Baris 12, Data Baris 13+):
+    - Mapping: SKU (Col B), Nama & Varian (Col C/D/E), Jenis / Kategori (Col H), Stok Akhir (Col L, $\ge 0$), Satuan (Col M).
+    - Normalisasi Satuan: `"box"` dan `"boks"` (case-insensitive) wajib disimpan sebagai `BOX`, `"pcs"` / `"Pieces"` sebagai `PCS`, dan pendaftaran otomatis untuk satuan baru (`Batang`, `Botol`, `Gram`, `Kg`, `Lembar`, `Pack`, `Roll`, `Sak`, `Set`, dll).
+  - Backend: Endpoint validasi dan batch insert produk & stok awal `POST /primary/v1/products/bulk-import`.
+  - Frontend: Modal upload file Excel/CSV di halaman `/products`, download template acuan, preview baris data valid/error, dan eksekusi import massal.
 - [ ] **Status Penyimpanan Draf pada Modal Create**:
   - Frontend: Utilitas penyimpanan lokal draf formulir (`localStorage`) pada modal Quotation, Sales Order, DO, Invoice, dan Produk dengan dialog konfirmasi pulihkan/buang draf saat dibuka kembali.
 - [ ] **Counter Customer Total Purchase**:
@@ -1296,10 +1307,11 @@ Delivery: DO-001        Delivery: DO-002
   - [ ] **Dashboard**: Input Harga Modal / HPP pada modal tambah/edit produk
 - [ ] **Penyesuaian Ukuran Cetak Dot Matrix**:
   - [ ] **Dashboard**: Dropdown pemilih ukuran kertas continuous form (Half-Letter 210x140mm vs Full Page 210x280mm), margin print presisi, dan densitas karakter pada dialog cetak Surat Jalan
-- [ ] **Bulk Import Produk via Excel / CSV**:
-  - [ ] Menunggu format template resmi dari pengguna
-  - [ ] **Controller**: Endpoint batch insert dan validasi file `POST /primary/v1/products/bulk-import`
-  - [ ] **Dashboard**: Modal upload template, preview data tabel validasi, dan tombol aksi import massal
+- [ ] **Bulk Import Produk via Excel (`daftar-stok.xlsx`)**:
+  - [ ] **Template Reference**: Mengadopsi format resmi `Mecca-Controller/#example/daftar-stok.xlsx` (Header Baris 12, Data Baris 13+): Kolom B (SKU), C/D/E (Nama & Varian), H (Jenis/Kategori), L (Stok Akhir $\ge 0$), M (Satuan)
+  - [ ] **Aturan Normalisasi Satuan**: `"box"` & `"boks"` (case-insensitive) disimpan sebagai `BOX`, `"pcs"` / `"Pieces"` sebagai `PCS`, dan registrasi otomatis satuan baru ke tabel `units`
+  - [ ] **Controller**: Endpoint batch insert dan validasi file spreadsheet `POST /primary/v1/products/bulk-import`
+  - [ ] **Dashboard**: Modal upload file Excel/CSV, unduh template acuan, preview data tabel validasi, dan tombol aksi import massal
 - [ ] **Penyimpanan Draf pada Modal Create**:
   - [ ] **Dashboard**: Hook utilitas `useFormDraft` berbasis `localStorage` pada formulir Quotation, SO, DO, Invoice, dan Produk dengan alert banner pulihkan draf
 - [ ] **Counter Customer Total Purchase**:
