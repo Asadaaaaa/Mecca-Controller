@@ -1088,40 +1088,40 @@ Delivery: DO-001        Delivery: DO-002
 - [x] Frontend Modul Delivery: Tampilan info ketersediaan stok fisik riil pada dialog pembuatan Surat Jalan dan restriksi input kuantitas maksimal kirim sesuai stok fisik
 - [x] Frontend Modul Operasional (UI Standardization): Penyeragaman desain kartu KPI Overview di seluruh 9 modul operasional dan menu navigasi cepat "Pengaturan Sistem" pada profil akun sidebar (`nav-user.tsx`)
 
-### Phase 12 — Enhancements, Consolidations & Operational Refinements (Status: DALAM PERENCANAAN / 0%)
-- [ ] **Multi-SO dalam 1 DO**:
+### Phase 12 — Enhancements, Consolidations & Operational Refinements (Status: SELESAI / 100%)
+- [x] **Multi-SO dalam 1 DO**:
   - Migrasi database tabel `deliveries` (`sales_order_id` nullable), tabel junction `delivery_sales_orders`, dan pembaruan `delivery_items` (`sales_order_id`, `sales_order_item_id`).
   - Backend Controller & Service: `createDelivery` mendukung payload array `sales_order_ids`, validasi kesamaan customer & warehouse, validasi kuantitas tidak melebihi sisa item masing-masing SO, dan pembaruan status parsial/penuh tiap SO terkait.
   - Frontend Dashboard: Modal dialog Buat Surat Jalan mendukung pemilihan Customer dan multi-select Sales Order aktif.
-- [ ] **Multi-DO dalam 1 Invoice**:
+- [x] **Multi-DO dalam 1 Invoice**:
   - Migrasi database tabel junction `invoice_deliveries (invoice_id, delivery_id)`.
   - Backend Controller & Service: `createInvoice` mendukung array `delivery_ids` milik customer yang sama dan pencegahan double-invoicing.
   - Frontend Dashboard: Modal dialog Terbitkan Faktur mendukung multi-select DO terkonfirmasi.
-- [ ] **Perbaikan Sumber Harga Faktur (Inherit Order Price)**:
+- [x] **Perbaikan Sumber Harga Faktur (Inherit Order Price)**:
   - Backend Controller: Harga satuan (`unit_price`), diskon, dan persentase pajak pada baris item Invoice dikunci dan diwarisi langsung dari `sales_order_items.unit_price`, BUKAN dari `products.selling_price`.
-- [ ] **SKU Produk: Manual Ketik & Tombol Generate Code**:
+- [x] **SKU Produk: Manual Ketik & Tombol Generate Code**:
   - Frontend: Tombol "Generate Code" pada formulir produk yang secara instan menghasilkan kode SKU unik (`PRD-YYYY-XXXX`). Pengguna tetap bebas mengetik SKU manual/barcode.
-- [ ] **Kode Kategori: Manual Ketik & Auto-Generate di Backend**:
+- [x] **Kode Kategori: Manual Ketik & Auto-Generate di Backend**:
   - Backend: Logic auto-generate kode kategori (`CAT-001`, `CAT-002`, dst) saat payload `code` dikosongkan/null.
   - Frontend: Input kode kategori dijadikan opsional di formulir kategori (tanpa tombol generate di UI).
-- [ ] **Harga Modal Produk (`cost_price`)**:
+- [x] **Harga Modal Produk (`cost_price`)**:
   - Database: Migrasi penambahan kolom `cost_price DECIMAL(15, 2) DEFAULT 0` pada tabel `products`.
   - Backend: Dukungan input & update `cost_price` pada API Produk serta integrasi kalkulasi valuasi stok dan estimasi margin kotor.
   - Frontend: Input Harga Modal / HPP pada dialog produk.
-- [ ] **Penyesuaian Ukuran Cetak Dot Matrix**:
+- [x] **Penyesuaian Ukuran Cetak Dot Matrix**:
   - Frontend: Dropdown pilihan ukuran kertas continuous form pada dialog preview cetak DO: Half-Letter (210mm × 140mm) dan Full Page (210mm × 280mm), beserta penyesuaian margin dan densitas karakter cetak jarum.
-- [ ] **Bulk Import Produk via Excel (`daftar-stok.xlsx`)**:
+- [x] **Bulk Import Produk via Excel (`daftar-stok.xlsx`)**:
   - Mengadopsi format resmi `Mecca-Controller/#example/daftar-stok.xlsx` (Header Baris 12, Data Baris 13+):
     - Mapping: SKU (Col B), Nama & Varian (Col C/D/E), Jenis / Kategori (Col H), Stok Akhir (Col L, $\ge 0$), Satuan (Col M).
     - Normalisasi Satuan: `"box"` dan `"boks"` (case-insensitive) wajib disimpan sebagai `BOX`, `"pcs"` / `"Pieces"` sebagai `PCS`, dan pendaftaran otomatis untuk satuan baru (`Batang`, `Botol`, `Gram`, `Kg`, `Lembar`, `Pack`, `Roll`, `Sak`, `Set`, dll).
   - Backend: Endpoint validasi dan batch insert produk & stok awal `POST /primary/v1/products/bulk-import`.
   - Frontend: Modal upload file Excel/CSV di halaman `/products`, download template acuan, preview baris data valid/error, dan eksekusi import massal.
-- [ ] **Status Penyimpanan Draf pada Modal Create**:
+- [x] **Status Penyimpanan Draf pada Modal Create**:
   - Frontend: Utilitas penyimpanan lokal draf formulir (`localStorage`) pada modal Quotation, Sales Order, DO, Invoice, dan Produk dengan dialog konfirmasi pulihkan/buang draf saat dibuka kembali.
-- [ ] **Counter Customer Total Purchase**:
+- [x] **Counter Customer Total Purchase**:
   - Backend: Kalkulasi agregat `order_count` dan `lifetime_spend` pada query daftar & detail customer.
   - Frontend: Tampilan metrik total order dan total akumulasi belanja pada tabel Customer dan kartu overview.
-- [ ] **Granular Delete Permissions**:
+- [x] **Granular Delete Permissions**:
   - Database & Seeder: Master permission baru (`*.delete`) untuk setiap modul operasional dan pemetaan ke role Superadmin.
   - Frontend: Proteksi permission guard pada seluruh tombol dan aksi Hapus data di antarmuka pengguna.
 
@@ -1286,38 +1286,38 @@ Delivery: DO-001        Delivery: DO-002
 - [x] **Dashboard (Sidebar & Routing)**: Penambahan menu "Pengaturan Sistem" pada sidebar menu Settings, menu cepat profil user di sidebar bawah (`nav-user.tsx`), dan route `/settings/system` di `App.tsx`
 - [x] **Dashboard (UI Standardization)**: Penyeragaman visual kartu KPI Overview di seluruh 9 modul operasional dan penyederhanaan judul overview menjadi "Overview"
 
-### 21.13 Modul Enhancements, Consolidations & Granular Security (Phase 12) (Status: DALAM PERENCANAAN / 0%)
-- [ ] **Multi-SO dalam 1 DO**:
-  - [ ] **Database**: Migrasi `deliveries` (`sales_order_id` nullable), tabel junction `delivery_sales_orders`, dan kolom `sales_order_id`, `sales_order_item_id` pada `delivery_items`
-  - [ ] **Controller**: Logic `createDelivery` & `confirmDelivery` mendukung multi-SO untuk customer & warehouse yang sama, alokasi sisa item per SO, dan pembaruan status SO terkait
-  - [ ] **Dashboard**: Dialog Buat Surat Jalan dengan pemilihan Customer dan multi-select Sales Order aktif
-- [ ] **Multi-DO dalam 1 Invoice**:
-  - [ ] **Database**: Migrasi tabel junction `invoice_deliveries (invoice_id, delivery_id)`
-  - [ ] **Controller**: Logic `createInvoice` mengonsolidasi multiple DO terkonfirmasi dan mencegah double-invoicing
-  - [ ] **Dashboard**: Dialog Terbitkan Faktur dengan multi-select DO terkonfirmasi milik customer
-- [ ] **Perbaikan Sumber Harga Faktur (Inherit Order Price)**:
-  - [ ] **Controller**: Pembentukan baris `invoice_items` mengunci dan mewarisi `unit_price`, diskon, dan pajak langsung dari `sales_order_items.unit_price`, bukan dari `products.selling_price`
-- [ ] **SKU Produk & Kategori**:
-  - [ ] **Dashboard**: Tombol "Generate Code" pada input SKU formulir produk (auto `PRD-YYYY-XXXX`)
-  - [ ] **Controller**: Auto-generate kode kategori (`CAT-001`, `CAT-002`, dst) di backend jika field `code` dikosongkan pada request tambah kategori
-  - [ ] **Dashboard**: Form kategori membuat input kode bersifat opsional (tanpa tombol generate)
-- [ ] **Harga Modal Produk (`cost_price`)**:
-  - [ ] **Database**: Migrasi penambahan kolom `cost_price` pada tabel `products`
-  - [ ] **Controller**: Penanganan `cost_price` pada model, validator, repository, dan kalkulasi valuasi stok
-  - [ ] **Dashboard**: Input Harga Modal / HPP pada modal tambah/edit produk
-- [ ] **Penyesuaian Ukuran Cetak Dot Matrix**:
-  - [ ] **Dashboard**: Dropdown pemilih ukuran kertas continuous form (Half-Letter 210x140mm vs Full Page 210x280mm), margin print presisi, dan densitas karakter pada dialog cetak Surat Jalan
-- [ ] **Bulk Import Produk via Excel (`daftar-stok.xlsx`)**:
-  - [ ] **Template Reference**: Mengadopsi format resmi `Mecca-Controller/#example/daftar-stok.xlsx` (Header Baris 12, Data Baris 13+): Kolom B (SKU), C/D/E (Nama & Varian), H (Jenis/Kategori), L (Stok Akhir $\ge 0$), M (Satuan)
-  - [ ] **Aturan Normalisasi Satuan**: `"box"` & `"boks"` (case-insensitive) disimpan sebagai `BOX`, `"pcs"` / `"Pieces"` sebagai `PCS`, dan registrasi otomatis satuan baru ke tabel `units`
-  - [ ] **Controller**: Endpoint batch insert dan validasi file spreadsheet `POST /primary/v1/products/bulk-import`
-  - [ ] **Dashboard**: Modal upload file Excel/CSV, unduh template acuan, preview data tabel validasi, dan tombol aksi import massal
-- [ ] **Penyimpanan Draf pada Modal Create**:
-  - [ ] **Dashboard**: Hook utilitas `useFormDraft` berbasis `localStorage` pada formulir Quotation, SO, DO, Invoice, dan Produk dengan alert banner pulihkan draf
-- [ ] **Counter Customer Total Purchase**:
-  - [ ] **Controller**: Penambahan perhitungan agregat `order_count` dan `lifetime_spend` pada data response customer
-  - [ ] **Dashboard**: Kolom Total Order & Akumulasi Belanja pada tabel Customer dan kartu overview
-- [ ] **Granular Delete Permissions**:
-  - [ ] **Database & Seeder**: Master permissions baru (`*.delete`) untuk setiap modul dan mapping hak akses ke Superadmin
-  - [ ] **Dashboard**: Permission guard untuk menyembunyikan tombol/menu Hapus jika pengguna tidak memiliki izin `.delete`
+### 21.13 Modul Enhancements, Consolidations & Granular Security (Phase 12) (Status: SELESAI / 100%)
+- [x] **Multi-SO dalam 1 DO**:
+  - [x] **Database**: Migrasi `deliveries` (`sales_order_id` nullable), tabel junction `delivery_sales_orders`, dan kolom `sales_order_id`, `sales_order_item_id` pada `delivery_items`
+  - [x] **Controller**: Logic `createDelivery` & `confirmDelivery` mendukung multi-SO untuk customer & warehouse yang sama, alokasi sisa item per SO, dan pembaruan status SO terkait
+  - [x] **Dashboard**: Dialog Buat Surat Jalan dengan pemilihan Customer dan multi-select Sales Order aktif
+- [x] **Multi-DO dalam 1 Invoice**:
+  - [x] **Database**: Migrasi tabel junction `invoice_deliveries (invoice_id, delivery_id)`
+  - [x] **Controller**: Logic `createInvoice` mengonsolidasi multiple DO terkonfirmasi dan mencegah double-invoicing
+  - [x] **Dashboard**: Dialog Terbitkan Faktur dengan multi-select DO terkonfirmasi milik customer
+- [x] **Perbaikan Sumber Harga Faktur (Inherit Order Price)**:
+  - [x] **Controller**: Pembentukan baris `invoice_items` mengunci dan mewarisi `unit_price`, diskon, dan pajak langsung dari `sales_order_items.unit_price`, bukan dari `products.selling_price`
+- [x] **SKU Produk & Kategori**:
+  - [x] **Dashboard**: Tombol "Generate Code" pada input SKU formulir produk (auto `PRD-YYYY-XXXX`)
+  - [x] **Controller**: Auto-generate kode kategori (`CAT-001`, `CAT-002`, dst) di backend jika field `code` dikosongkan pada request tambah kategori
+  - [x] **Dashboard**: Form kategori membuat input kode bersifat opsional (tanpa tombol generate)
+- [x] **Harga Modal Produk (`cost_price`)**:
+  - [x] **Database**: Migrasi penambahan kolom `cost_price` pada tabel `products`
+  - [x] **Controller**: Penanganan `cost_price` pada model, validator, repository, dan kalkulasi valuasi stok
+  - [x] **Dashboard**: Input Harga Modal / HPP pada modal tambah/edit produk
+- [x] **Penyesuaian Ukuran Cetak Dot Matrix**:
+  - [x] **Dashboard**: Dropdown pemilih ukuran kertas continuous form (Half-Letter 210x140mm vs Full Page 210x280mm), margin print presisi, dan densitas karakter pada dialog cetak Surat Jalan
+- [x] **Bulk Import Produk via Excel (`daftar-stok.xlsx`)**:
+  - [x] **Template Reference**: Mengadopsi format resmi `Mecca-Controller/#example/daftar-stok.xlsx` (Header Baris 12, Data Baris 13+): Kolom B (SKU), C/D/E (Nama & Varian), H (Jenis/Kategori), L (Stok Akhir $\ge 0$), M (Satuan)
+  - [x] **Aturan Normalisasi Satuan**: `"box"` & `"boks"` (case-insensitive) disimpan sebagai `BOX`, `"pcs"` / `"Pieces"` sebagai `PCS`, dan registrasi otomatis satuan baru ke tabel `units`
+  - [x] **Controller**: Endpoint batch insert dan validasi file spreadsheet `POST /primary/v1/products/bulk-import`
+  - [x] **Dashboard**: Modal upload file Excel/CSV, unduh template acuan, preview data tabel validasi, dan tombol aksi import massal
+- [x] **Penyimpanan Draf pada Modal Create**:
+  - [x] **Dashboard**: Hook utilitas `useFormDraft` berbasis `localStorage` pada formulir Quotation, SO, DO, Invoice, dan Produk dengan alert banner pulihkan draf
+- [x] **Counter Customer Total Purchase**:
+  - [x] **Controller**: Penambahan perhitungan agregat `order_count` dan `lifetime_spend` pada data response customer
+  - [x] **Dashboard**: Kolom Total Order & Akumulasi Belanja pada tabel Customer dan kartu overview
+- [x] **Granular Delete Permissions**:
+  - [x] **Database & Seeder**: Master permissions baru (`*.delete`) untuk setiap modul dan mapping hak akses ke Superadmin
+  - [x] **Dashboard**: Permission guard untuk menyembunyikan tombol/menu Hapus jika pengguna tidak memiliki izin `.delete`
 
