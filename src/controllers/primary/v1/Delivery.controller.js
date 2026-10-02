@@ -117,6 +117,9 @@ class DeliveryController {
             if (!result) {
                 return res.status(404).json(this.ResponsePreset.resErr(404, 'Delivery not found', 'delivery', { code: -1 }));
             }
+            if (result.error) {
+                return res.status(400).json(this.ResponsePreset.resErr(400, result.message, 'delivery', result));
+            }
             return res.status(200).json(this.ResponsePreset.resOK('Delivery marked as completed / received', result));
         } catch (error) {
             this.server.sendLogs(error);
@@ -130,6 +133,9 @@ class DeliveryController {
             const result = await this.DeliveryService.deleteDelivery(id);
             if (!result) {
                 return res.status(404).json(this.ResponsePreset.resErr(404, 'Delivery not found', 'delivery', { code: -1 }));
+            }
+            if (result.error) {
+                return res.status(400).json(this.ResponsePreset.resErr(400, result.message, 'delivery', result));
             }
             return res.status(200).json(this.ResponsePreset.resOK('Delivery deleted successfully', null));
         } catch (error) {
@@ -151,7 +157,10 @@ class DeliveryController {
             }
 
             const { ids } = req.body;
-            await this.DeliveryService.batchDeleteDeliveries(ids);
+            const result = await this.DeliveryService.batchDeleteDeliveries(ids);
+            if (result && result.error) {
+                return res.status(400).json(this.ResponsePreset.resErr(400, result.message, 'delivery', result));
+            }
             return res.status(200).json(this.ResponsePreset.resOK('Deliveries deleted successfully', null));
         } catch (error) {
             this.server.sendLogs(error);

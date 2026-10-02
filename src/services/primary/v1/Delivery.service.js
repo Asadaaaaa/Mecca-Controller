@@ -384,15 +384,39 @@ class DeliveryService {
     async completeDelivery(id, user = null) {
         const delivery = await this.deliveryRepo.findDeliveryById(id);
         if (!delivery) return null;
+        if (delivery.status === 'Diterima') {
+            return { error: 'ALREADY_DELIVERED', message: 'Pengiriman ini sudah berstatus Diterima dan tidak dapat diubah lagi.' };
+        }
+        if (delivery.status !== 'Dalam Perjalanan') {
+            return { error: 'INVALID_STATUS', message: 'Hanya surat jalan yang sudah "Dalam Perjalanan" yang dapat ditandai diterima.' };
+        }
         await delivery.update({ status: 'Diterima' });
         return delivery;
     }
 
     async deleteDelivery(id) {
+        const delivery = await this.deliveryRepo.findDeliveryById(id);
+        if (!delivery) return null;
+        if (delivery.status === 'Dalam Perjalanan' || delivery.status === 'Diterima') {
+            return {
+                error: 'CANNOT_DELETE_PROCESSED_DELIVERY',
+                message: 'Surat Jalan yang sudah diproses kirim atau telah diterima tidak dapat dirubah atau dihapus.'
+            };
+        }
         return await this.deliveryRepo.deleteDelivery(id);
     }
 
     async batchDeleteDeliveries(ids) {
+        const deliveries = await this.deliveryRepo.deliveryTable.findAll({
+            where: { id: { [this.server.model.db.Sequelize.Op.in]: ids } }
+        });
+        const processed = deliveries.filter(d => d.status === 'Dalam Perjalanan' || d.status === 'Diterima');
+        if (processed.length > 0) {
+            return {
+                error: 'CANNOT_DELETE_PROCESSED_DELIVERY',
+                message: `Sebagian surat jalan (${processed.map(p => p.delivery_number).join(', ')}) sudah diproses kirim dan tidak dapat dihapus.`
+            };
+        }
         return await this.deliveryRepo.batchDeleteDeliveries(ids);
     }
 }

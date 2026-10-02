@@ -69,6 +69,9 @@ class SalesOrderService {
                 totalDeliveredQty,
                 status: o.status,
                 notes: o.notes || '',
+                recipient_name: o.recipient_name || o.customer?.name || '-',
+                recipient_phone: o.recipient_phone || o.customer?.phone || '',
+                shipping_address: o.shipping_address || o.customer?.address || '',
                 creator: o.creator?.name || '-',
                 items: o.items ? o.items.map(item => ({
                     id: item.id,
@@ -126,6 +129,9 @@ class SalesOrderService {
             grand_total: parseFloat(o.grand_total) || 0,
             status: o.status,
             notes: o.notes,
+            recipient_name: o.recipient_name || o.customer?.name || '',
+            recipient_phone: o.recipient_phone || o.customer?.phone || '',
+            shipping_address: o.shipping_address || o.customer?.address || '',
             creator: o.creator,
             items: o.items ? o.items.map(item => ({
                 id: item.id,
@@ -274,6 +280,9 @@ class SalesOrderService {
                 grand_total,
                 status: data.status || 'Siap Kirim',
                 notes: data.notes || null,
+                recipient_name: data.recipient_name || null,
+                recipient_phone: data.recipient_phone || null,
+                shipping_address: data.shipping_address || null,
                 created_by: user?.id || null
             }, t);
 
@@ -293,6 +302,22 @@ class SalesOrderService {
         return await this.server.model.db.transaction(async (t) => {
             const salesOrder = await this.salesOrderRepo.findSalesOrderById(id, t);
             if (!salesOrder) return null;
+
+            // Guardrail: Cannot edit if SO is already processed for delivery or delivered
+            if (['Proses Kirim', 'Selesai Dikirim', 'Selesai', 'DELIVERED', 'SHIPPED'].includes(salesOrder.status)) {
+                return {
+                    error: 'CANNOT_EDIT_PROCESSED_SO',
+                    message: 'Pesanan Penjualan yang sedang atau sudah diproses kirim tidak dapat diubah.'
+                };
+            }
+
+            const hasDeliveredItems = salesOrder.items?.some(it => parseFloat(it.delivered_quantity) > 0);
+            if (hasDeliveredItems) {
+                return {
+                    error: 'CANNOT_EDIT_PROCESSED_SO',
+                    message: 'Pesanan Penjualan yang sebagian itemnya sudah dikirim tidak dapat diubah.'
+                };
+            }
 
             const warehouse_id = parseInt(data.warehouse_id || salesOrder.warehouse_id || 1, 10);
 

@@ -105,8 +105,8 @@ class SalesOrderController {
             if (!result) {
                 return res.status(404).json(this.ResponsePreset.resErr(404, 'Sales Order not found', 'sales_order', { code: -1 }));
             }
-            if (result.error === 'INSUFFICIENT_STOCK') {
-                return res.status(400).json(this.ResponsePreset.resErr(400, result.message, 'inventory', result));
+            if (result.error) {
+                return res.status(400).json(this.ResponsePreset.resErr(400, result.message, 'sales_order', result));
             }
             return res.status(200).json(this.ResponsePreset.resOK('Sales Order updated successfully', result));
         } catch (error) {

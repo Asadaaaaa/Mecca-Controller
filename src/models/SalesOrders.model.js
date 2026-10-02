@@ -19,6 +19,18 @@ class SalesOrdersModel {
         type: DataTypes.BIGINT,
         allowNull: false
       },
+      recipient_name: {
+        type: DataTypes.STRING(150),
+        allowNull: true
+      },
+      recipient_phone: {
+        type: DataTypes.STRING(50),
+        allowNull: true
+      },
+      shipping_address: {
+        type: DataTypes.TEXT,
+        allowNull: true
+      },
       quotation_id: {
         type: DataTypes.BIGINT,
         allowNull: true

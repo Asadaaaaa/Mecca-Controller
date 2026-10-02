@@ -4,6 +4,9 @@ class SalesOrderValidator {
         "properties": {
             "sales_order_number": { "type": "string" },
             "customer_id": { "type": "integer" },
+            "recipient_name": { "type": ["string", "null"] },
+            "recipient_phone": { "type": ["string", "null"] },
+            "shipping_address": { "type": ["string", "null"] },
             "quotation_id": { "type": ["integer", "null"] },
             "warehouse_id": { "type": ["integer", "null"] },
             "order_date": { "type": "string" },
@@ -39,6 +42,9 @@ class SalesOrderValidator {
         "type": "object",
         "properties": {
             "customer_id": { "type": "integer" },
+            "recipient_name": { "type": ["string", "null"] },
+            "recipient_phone": { "type": ["string", "null"] },
+            "shipping_address": { "type": ["string", "null"] },
             "quotation_id": { "type": ["integer", "null"] },
             "warehouse_id": { "type": ["integer", "null"] },
             "order_date": { "type": "string" },
