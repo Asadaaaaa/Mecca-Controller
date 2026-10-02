@@ -45,7 +45,7 @@ class ProductCategoryService {
     }
 
     async createCategory(data) {
-        const code = data.code || await this.ProductCategoryRepository.generateNextCode();
+        const code = (data.code && data.code.trim()) ? data.code.trim() : await this.ProductCategoryRepository.generateNextCode();
 
         const existingCode = await this.ProductCategoryRepository.findByCode(code);
         if (existingCode) {
@@ -66,9 +66,14 @@ class ProductCategoryService {
         const existing = await this.ProductCategoryRepository.findById(id);
         if (!existing) return -1;
 
-        if (data.code && data.code !== existing.code) {
-            const duplicate = await this.ProductCategoryRepository.findByCode(data.code);
-            if (duplicate) return -2;
+        if (data.code && data.code.trim()) {
+            data.code = data.code.trim();
+            if (data.code !== existing.code) {
+                const duplicate = await this.ProductCategoryRepository.findByCode(data.code);
+                if (duplicate) return -2;
+            }
+        } else {
+            delete data.code;
         }
 
         const updated = await this.ProductCategoryRepository.update(id, data);
