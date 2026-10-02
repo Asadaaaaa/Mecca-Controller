@@ -3,8 +3,7 @@ class ProductValidator {
         "type": "object",
         "properties": {
             "code": {
-                "type": "string",
-                "minLength": 1,
+                "type": ["string", "null"],
                 "maxLength": 50
             },
             "name": {
@@ -45,8 +44,7 @@ class ProductValidator {
         "type": "object",
         "properties": {
             "code": {
-                "type": "string",
-                "minLength": 1,
+                "type": ["string", "null"],
                 "maxLength": 50
             },
             "name": {

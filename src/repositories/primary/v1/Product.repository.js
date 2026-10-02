@@ -156,6 +156,22 @@ class ProductRepository {
 
     async generateNextCode() {
         if (!this.table) return 'PRD-001';
+        const latest = await this.table.findOne({
+            where: {
+                code: {
+                    [this.server.model.db.Sequelize.Op.like]: 'PRD-%'
+                }
+            },
+            order: [['id', 'DESC']]
+        });
+        if (!latest) {
+            return 'PRD-001';
+        }
+        const match = latest.code.match(/PRD-(\d+)/);
+        if (match) {
+            const nextNum = (parseInt(match[1], 10) + 1).toString().padStart(3, '0');
+            return `PRD-${nextNum}`;
+        }
         const count = await this.table.count();
         const nextNum = (count + 1).toString().padStart(3, '0');
         return `PRD-${nextNum}`;

@@ -55,7 +55,7 @@ class ProductService {
     }
 
     async createProduct(data) {
-        const code = data.code || await this.ProductRepository.generateNextCode();
+        const code = (data.code && data.code.trim()) ? data.code.trim() : await this.ProductRepository.generateNextCode();
 
         const existingCode = await this.ProductRepository.findByCode(code);
         if (existingCode) {
@@ -81,9 +81,14 @@ class ProductService {
         const existing = await this.ProductRepository.findById(id);
         if (!existing) return -1;
 
-        if (data.code && data.code !== existing.code) {
-            const duplicate = await this.ProductRepository.findByCode(data.code);
-            if (duplicate) return -2;
+        if (data.code && data.code.trim()) {
+            data.code = data.code.trim();
+            if (data.code !== existing.code) {
+                const duplicate = await this.ProductRepository.findByCode(data.code);
+                if (duplicate) return -2;
+            }
+        } else {
+            delete data.code;
         }
 
         const updated = await this.ProductRepository.update(id, data);
