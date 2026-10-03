@@ -66,6 +66,16 @@ class DeliveryService {
                 totalItems,
                 status: d.status,
                 notes: d.notes || '',
+                signature_city: d.signature_city || 'Jakarta',
+                signature_date: d.signature_date || d.delivery_date,
+                signatures_data: d.signatures_data || null,
+                signatures: (() => {
+                    try {
+                        return d.signatures_data ? JSON.parse(d.signatures_data) : null;
+                    } catch (e) {
+                        return null;
+                    }
+                })(),
                 creator: d.creator?.name || '-',
                 items: d.items ? d.items.map(item => ({
                     id: item.id,
@@ -82,6 +92,7 @@ class DeliveryService {
                 updated_at: d.updated_at
             };
         });
+
 
         return {
             items,
@@ -120,13 +131,24 @@ class DeliveryService {
             customer: d.customer,
             warehouse_id: d.warehouse_id,
             warehouse: d.warehouse?.name || '-',
-            warehouseDetail: d.warehouse,
             courierFleet: d.courier_fleet,
             trackingNumber: d.tracking_number,
+
             totalItems,
             status: d.status,
             notes: d.notes,
+            signature_city: d.signature_city || 'Jakarta',
+            signature_date: d.signature_date || d.delivery_date,
+            signatures_data: d.signatures_data || null,
+            signatures: (() => {
+                try {
+                    return d.signatures_data ? JSON.parse(d.signatures_data) : null;
+                } catch (e) {
+                    return null;
+                }
+            })(),
             creator: d.creator,
+
             items: d.items ? d.items.map(item => ({
                 id: item.id,
                 sales_order_id: item.sales_order_id,
@@ -243,6 +265,11 @@ class DeliveryService {
                 return -4; // No valid items
             }
 
+            let signatures_data = data.signatures_data || null;
+            if (!signatures_data && Array.isArray(data.signatures)) {
+                signatures_data = JSON.stringify(data.signatures);
+            }
+
             const delivery = await this.deliveryRepo.createDelivery({
                 delivery_number,
                 sales_order_id: soIds[0] || null,
@@ -253,8 +280,12 @@ class DeliveryService {
                 tracking_number: data.tracking_number || null,
                 status: data.status || 'Siap Muat',
                 notes: data.notes || null,
+                signature_city: data.signature_city || 'Jakarta',
+                signature_date: data.signature_date || data.delivery_date || new Date().toISOString().slice(0, 10),
+                signatures_data: signatures_data || null,
                 created_by: user?.id || null
             }, t);
+
 
             // Record in delivery_sales_orders junction table
             const junctionEntries = soIds.map(soId => ({

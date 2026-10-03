@@ -48,10 +48,24 @@ class DeliveriesModel {
         type: DataTypes.TEXT,
         allowNull: true
       },
+      signature_city: {
+        type: DataTypes.STRING(100),
+        allowNull: true,
+        defaultValue: 'Jakarta'
+      },
+      signature_date: {
+        type: DataTypes.DATEONLY,
+        allowNull: true
+      },
+      signatures_data: {
+        type: DataTypes.TEXT,
+        allowNull: true
+      },
       created_by: {
         type: DataTypes.BIGINT,
         allowNull: true
       },
+
       created_at: {
         type: DataTypes.DATE,
         allowNull: false,

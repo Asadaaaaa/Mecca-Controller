@@ -15,6 +15,10 @@ class DeliveryValidator {
             "tracking_number": { "type": ["string", "null"] },
             "status": { "type": "string" },
             "notes": { "type": ["string", "null"] },
+            "signature_city": { "type": ["string", "null"] },
+            "signature_date": { "type": ["string", "null"] },
+            "signatures": { "type": ["array", "null"] },
+            "signatures_data": { "type": ["string", "null"] },
             "items": {
                 "type": "array",
                 "items": {
@@ -42,10 +46,15 @@ class DeliveryValidator {
             "courier_fleet": { "type": ["string", "null"] },
             "tracking_number": { "type": ["string", "null"] },
             "status": { "type": "string" },
-            "notes": { "type": ["string", "null"] }
+            "notes": { "type": ["string", "null"] },
+            "signature_city": { "type": ["string", "null"] },
+            "signature_date": { "type": ["string", "null"] },
+            "signatures": { "type": ["array", "null"] },
+            "signatures_data": { "type": ["string", "null"] }
         },
         "additionalProperties": false
     };
+
 
     batchDelete = {
         "type": "object",
