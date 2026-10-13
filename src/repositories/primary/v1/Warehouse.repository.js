@@ -30,7 +30,10 @@ class WarehouseRepository {
                 { code: { [Op.like]: query } },
                 { pic_name: { [Op.like]: query } },
                 { address: { [Op.like]: query } },
-                { phone: { [Op.like]: query } }
+                { phone: { [Op.like]: query } },
+                { email: { [Op.like]: query } },
+                { npwp: { [Op.like]: query } },
+                { account_number: { [Op.like]: query } }
             ];
         }
 

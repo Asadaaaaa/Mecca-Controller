@@ -23,6 +23,26 @@ class WarehouseValidator {
                 "type": ["string", "null"],
                 "maxLength": 30
             },
+            "email": {
+                "type": ["string", "null"],
+                "maxLength": 100
+            },
+            "npwp": {
+                "type": ["string", "null"],
+                "maxLength": 50
+            },
+            "bank_name": {
+                "type": ["string", "null"],
+                "maxLength": 100
+            },
+            "account_number": {
+                "type": ["string", "null"],
+                "maxLength": 100
+            },
+            "account_name": {
+                "type": ["string", "null"],
+                "maxLength": 150
+            },
             "status": {
                 "type": "string",
                 "enum": ["active", "inactive"]
@@ -55,6 +75,26 @@ class WarehouseValidator {
             "phone": {
                 "type": ["string", "null"],
                 "maxLength": 30
+            },
+            "email": {
+                "type": ["string", "null"],
+                "maxLength": 100
+            },
+            "npwp": {
+                "type": ["string", "null"],
+                "maxLength": 50
+            },
+            "bank_name": {
+                "type": ["string", "null"],
+                "maxLength": 100
+            },
+            "account_number": {
+                "type": ["string", "null"],
+                "maxLength": 100
+            },
+            "account_name": {
+                "type": ["string", "null"],
+                "maxLength": 150
             },
             "status": {
                 "type": "string",

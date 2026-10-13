@@ -58,6 +58,11 @@ class WarehouseService {
             address: data.address || null,
             pic_name: data.pic_name || null,
             phone: data.phone || null,
+            email: data.email || null,
+            npwp: data.npwp || null,
+            bank_name: data.bank_name || null,
+            account_number: data.account_number || null,
+            account_name: data.account_name || null,
             status: data.status || 'active'
         });
 

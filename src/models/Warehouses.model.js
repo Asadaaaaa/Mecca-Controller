@@ -31,6 +31,26 @@ class WarehousesModel {
         type: DataTypes.STRING(30),
         allowNull: true
       },
+      email: {
+        type: DataTypes.STRING(100),
+        allowNull: true
+      },
+      npwp: {
+        type: DataTypes.STRING(50),
+        allowNull: true
+      },
+      bank_name: {
+        type: DataTypes.STRING(100),
+        allowNull: true
+      },
+      account_number: {
+        type: DataTypes.STRING(100),
+        allowNull: true
+      },
+      account_name: {
+        type: DataTypes.STRING(150),
+        allowNull: true
+      },
       status: {
         type: DataTypes.STRING(20),
         allowNull: false,
