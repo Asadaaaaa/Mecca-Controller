@@ -15,3 +15,4 @@ export { default as InvoiceService } from './Invoice.service.js';
 export { default as PaymentService } from './Payment.service.js';
 export { default as DashboardService } from './Dashboard.service.js';
 export { default as SystemSettingService } from './SystemSetting.service.js';
+export { default as FormDraftService } from './FormDraft.service.js';

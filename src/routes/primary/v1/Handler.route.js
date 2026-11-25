@@ -15,7 +15,8 @@ import {
   InvoiceRoute,
   PaymentRoute,
   DashboardRoute,
-  SystemSettingRoute
+  SystemSettingRoute,
+  FormDraftRoute
 } from '#routesPrimaryV1';
 
 class PrimaryHandlerV1 {
@@ -39,6 +40,7 @@ class PrimaryHandlerV1 {
     new PaymentRoute(server, endpointPrefix);
     new DashboardRoute(server, endpointPrefix);
     new SystemSettingRoute(server, endpointPrefix);
+    new FormDraftRoute(server, endpointPrefix);
   }
 }
 

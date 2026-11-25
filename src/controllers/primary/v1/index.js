@@ -15,3 +15,4 @@ export { default as InvoiceController } from "./Invoice.controller.js";
 export { default as PaymentController } from "./Payment.controller.js";
 export { default as DashboardController } from "./Dashboard.controller.js";
 export { default as SystemSettingController } from "./SystemSetting.controller.js";
+export { default as FormDraftController } from "./FormDraft.controller.js";

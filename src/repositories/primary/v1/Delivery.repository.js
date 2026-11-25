@@ -102,7 +102,7 @@ class DeliveryRepository {
                 {
                     model: this.warehouseTable,
                     as: 'warehouse',
-                    attributes: ['id', 'code', 'name']
+                    attributes: ['id', 'code', 'name', 'address', 'phone', 'email', 'npwp', 'bank_name', 'account_number', 'account_name']
                 },
                 {
                     model: this.userTable,

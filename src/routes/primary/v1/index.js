@@ -15,3 +15,4 @@ export { default as InvoiceRoute } from "./Invoice.route.js";
 export { default as PaymentRoute } from "./Payment.route.js";
 export { default as DashboardRoute } from "./Dashboard.route.js";
 export { default as SystemSettingRoute } from "./SystemSetting.route.js";
+export { default as FormDraftRoute } from "./FormDraft.route.js";

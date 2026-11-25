@@ -61,6 +61,7 @@ class DeliveryService {
                 customerName: d.customer?.name || '-',
                 warehouse_id: d.warehouse_id,
                 warehouse: d.warehouse?.name || '-',
+                warehouseDetail: d.warehouse || null,
                 courierFleet: d.courier_fleet || '-',
                 trackingNumber: d.tracking_number || '-',
                 totalItems,
@@ -131,6 +132,7 @@ class DeliveryService {
             customer: d.customer,
             warehouse_id: d.warehouse_id,
             warehouse: d.warehouse?.name || '-',
+            warehouseDetail: d.warehouse || null,
             courierFleet: d.courier_fleet,
             trackingNumber: d.tracking_number,
 

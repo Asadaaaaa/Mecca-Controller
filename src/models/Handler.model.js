@@ -29,6 +29,7 @@ import InvoiceDeliveriesModel from "./InvoiceDeliveries.model.js";
 import PaymentsModel from "./Payments.model.js";
 import PaymentAllocationsModel from "./PaymentAllocations.model.js";
 import SystemSettingsModel from "./SystemSettings.model.js";
+import FormDraftsModel from "./FormDrafts.model.js";
 
 class Handler {
     constructor(server) {
@@ -87,6 +88,7 @@ class Handler {
         this.payments = new PaymentsModel(this.server, this.db);
         this.paymentAllocations = new PaymentAllocationsModel(this.server, this.db);
         this.systemSettings = new SystemSettingsModel(this.server, this.db);
+        this.formDrafts = new FormDraftsModel(this.server, this.db);
 
         // Associations
         this.users.table.belongsToMany(this.roles.table, {
@@ -408,6 +410,13 @@ class Handler {
             foreignKey: 'updated_by',
             as: 'updater'
         });
+
+        this.formDrafts.table.belongsTo(this.users.table, {
+            foreignKey: 'user_id',
+            as: 'user'
+        });
+
+        await this.formDrafts.table.sync();
 
         return this.db;
     }

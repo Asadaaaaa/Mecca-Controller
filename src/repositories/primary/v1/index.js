@@ -14,3 +14,4 @@ export { default as InvoiceRepository } from "./Invoice.repository.js";
 export { default as PaymentRepository } from "./Payment.repository.js";
 export { default as DashboardRepository } from "./Dashboard.repository.js";
 export { default as SystemSettingRepository } from "./SystemSetting.repository.js";
+export { default as FormDraftRepository } from "./FormDraft.repository.js";
